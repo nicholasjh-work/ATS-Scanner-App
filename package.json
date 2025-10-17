@@ -5,14 +5,20 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "package-mac": "electron-packager . \"ATS Scanner\" --platform=darwin --arch=x64 --out=dist --overwrite"
+    "package-mac": "electron-packager . 'ATS Scanner' --platform=darwin --arch=x64 --out=dist --overwrite"
   },
   "keywords": [
     "ATS",
     "Resume",
-    "Scanner"
+    "Scanner",
+    "AI",
+    "Electron"
   ],
-  "author": "Your Name",
+  "author": {
+    "name": "Nicholas J. Hidalgo",
+    "email": "atscannerapp@nicholashidalgo.com",
+    "url": "https://nicholashidalgo.com"
+  },
   "license": "MIT",
   "devDependencies": {
     "electron": "^28.0.0",
