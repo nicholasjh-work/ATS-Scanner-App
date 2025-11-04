@@ -13,9 +13,27 @@
   <!-- jsPDF and autotable for PDF export -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Inter', sans-serif; }
+    body {
+      font-family: 'Space Grotesk', sans-serif;
+      background: linear-gradient(135deg, #0a0f2c, #1a103d, #2a0f4d);
+      background-attachment: fixed;
+      color: #e5e7eb;
+      position: relative;
+      overflow-x: hidden;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-image: linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+    }
+    h1,h2,h3 { font-family: 'Space Grotesk', sans-serif; }
+    code, pre { font-family: 'JetBrains Mono', monospace; }
     .progress-ring__circle {
       transition: stroke-dashoffset 0.5s ease-in-out;
       transform: rotate(-90deg);
@@ -26,21 +44,46 @@
       from { opacity: 0; transform: translateY(20px); }
       to { opacity: 1; transform: translateY(0); }
     }
-    ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: #1f2937; }
-    ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
-    .glowing-border {
-      border: 2px solid transparent;
-      transition: border-color 0.3s, box-shadow 0.3s;
-    }
     .glowing-border:focus-within {
       border-color: #3b82f6;
       box-shadow: 0 0 10px #3b82f6;
     }
+    .neon-border {
+      border: 2px solid transparent;
+      border-image: linear-gradient(90deg, #00f0ff, #ff00ff) 1;
+      animation: borderGlow 3s linear infinite;
+    }
+    @keyframes borderGlow {
+      0% { border-image-source: linear-gradient(90deg, #00f0ff, #ff00ff); }
+      50% { border-image-source: linear-gradient(90deg, #ff00ff, #00f0ff); }
+      100% { border-image-source: linear-gradient(90deg, #00f0ff, #ff00ff); }
+    }
+    .button-ripple { position: relative; overflow: hidden; }
+    .button-ripple::after {
+      content: "";
+      position: absolute;
+      border-radius: 50%;
+      width: 100px; height: 100px;
+      background: rgba(255,255,255,0.3);
+      transform: scale(0);
+      opacity: 0;
+      pointer-events: none;
+    }
+    .button-ripple:active::after {
+      transform: scale(4);
+      opacity: 1;
+      transition: transform 0.6s, opacity 1s;
+    }
+    #neural-bg {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: -1;
+    }
   </style>
 </head>
 <body class="bg-gray-900 text-gray-200">
+  <canvas id="neural-bg"></canvas>
   <div class="container mx-auto p-4 md:p-8">
 
     <!-- HEADER -->
@@ -52,7 +95,7 @@
         AI‑Powered Resume Analyzer — by N. Hidalgo
       </p>
       <a href="#main-content"
-         class="mt-4 inline-block bg-gradient-to-r from-cyan-500 to-violet-600 text-white font-semibold py-2 px-6 rounded-lg shadow hover:opacity-90 transition">
+         class="button-ripple mt-4 inline-block bg-gradient-to-r from-cyan-500 to-violet-600 text-white font-semibold py-2 px-6 rounded-lg shadow hover:opacity-90 transition">
         Try It Now
       </a>
     </header>
@@ -60,17 +103,17 @@
     <!-- FEATURE STRIP -->
     <section class="mt-6">
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="bg-gray-800 rounded-xl p-4 text-center hover:shadow-lg hover:-translate-y-1 transition">
+        <div class="backdrop-blur-md bg-gray-800/40 neon-border rounded-xl p-4 text-center hover:shadow-lg hover:-translate-y-1 transition">
           <div class="text-cyan-400 mb-2 text-2xl">🔍</div>
           <h3 class="text-white font-semibold">Analysis Modes</h3>
           <p class="text-gray-400 text-sm">Keyword and Semantic analysis, selectable per run.</p>
         </div>
-        <div class="bg-gray-800 rounded-xl p-4 text-center hover:shadow-lg hover:-translate-y-1 transition">
+        <div class="backdrop-blur-md bg-gray-800/40 neon-border rounded-xl p-4 text-center hover:shadow-lg hover:-translate-y-1 transition">
           <div class="text-cyan-400 mb-2 text-2xl">📊</div>
           <h3 class="text-white font-semibold">Actionable Report</h3>
           <p class="text-gray-400 text-sm">Overall match score, sub‑scores, key recommendations, strengths & gaps.</p>
         </div>
-        <div class="bg-gray-800 rounded-xl p-4 text-center hover:shadow-lg hover:-translate-y-1 transition">
+        <div class="backdrop-blur-md bg-gray-800/40 neon-border rounded-xl p-4 text-center hover:shadow-lg hover:-translate-y-1 transition">
           <div class="text-cyan-400 mb-2 text-2xl">📤</div>
           <h3 class="text-white font-semibold">Export & Share</h3>
           <p class="text-gray-400 text-sm">Export PDF, copy raw JSON, feed into an LLM for guided resume edits.</p>
@@ -81,7 +124,7 @@
     <!-- MAIN CONTENT -->
     <div id="main-content" class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
       <!-- Left Column: Inputs -->
-      <div class="bg-gray-800 p-6 rounded-2xl shadow-lg">
+      <div class="backdrop-blur-md bg-gray-800/40 neon-border p-6 rounded-2xl shadow-lg">
         <h2 class="text-2xl font-semibold mb-4 text-white border-b border-gray-700 pb-2">Inputs</h2>
 
         <!-- Resume Input -->
@@ -92,7 +135,7 @@
           </div>
           <div class="mt-3 text-right">
             <input type="file" id="resume-upload" class="hidden" accept=".pdf,.doc,.docx,.txt" onchange="handleFileUpload(event, 'resume-input')">
-            <button onclick="document.getElementById('resume-upload').click()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-transform transform hover:scale-105">Upload Resume</button>
+            <button onclick="document.getElementById('resume-upload').click()" class="button-ripple bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-transform transform hover:scale-105">Upload Resume</button>
           </div>
         </div>
 
@@ -100,37 +143,3 @@
         <div class="mb-6">
           <label for="jd-input" class="block text-lg font-medium mb-2">📑 Job Description</label>
           <div class="glowing-border bg-gray-900 rounded-lg">
-            <textarea id="jd-input" rows="12" class="w-full bg-transparent p-3 rounded-lg focus:outline-none resize-y" placeholder="Paste job description here or upload a file..."></textarea>
-          </div>
-          <div class="mt-3 text-right">
-            <input type="file" id="jd-upload" class="hidden" accept=".pdf,.doc,.docx,.txt" onchange="handleFileUpload(event, 'jd-input')">
-            <button onclick="document.getElementById('jd-upload').click()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-transform transform hover:scale-105">Upload JD</button>
-          </div>
-        </div>
-
-        <!-- Controls -->
-        <div class="flex items-center justify-between mt-6 flex-wrap gap-4">
-          <div class="flex items-center space-x-4">
-            <span class="text-lg font-medium">Analysis Mode:</span>
-            <div class="flex items-center space-x-3">
-              <label class="flex items-center cursor-pointer">
-                <input type="radio" name="analysis-mode" value="keyword" class="form-radio h-5 w-5 text-blue-600 bg-gray-700 border-gray-600 focus:ring-blue-500" checked>
-                <span class="ml-2 text-gray-200">Keyword</span>
-              </label>
-              <label class="flex items-center cursor-pointer">
-                <input type="radio" name="analysis-mode" value="semantic" class="form-radio h-5 w-5 text-blue-600 bg-gray-700 border-gray-600 focus:ring-blue-500">
-                <span class="ml-2 text-gray-200">Semantic</span>
-              </label>
-            </div>
-          </div>
-          <div class="flex gap-4">
-            <button id="clear-btn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg transition-transform transform hover:scale-105">Clear All</button>
-            <button id="scan-btn" class="bg-gradient-to-r from-green-500 to-green-700 text-white font-bold py-3 px-6 rounded-lg transition-transform transform hover:scale-105 shadow-md">Analyze</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Right Column: Results -->
-      <div id="results-container" class="bg-gray-800 p-6 rounded-2xl shadow-lg hidden"></div>
-
-      <!-- Initial State
