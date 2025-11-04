@@ -243,12 +243,110 @@
     const resumeInput = document.getElementById('resume-input');
     const jdInput = document.getElementById('jd-input');
 
-    scanBtn.addEventListener('click', () => {
+    // --- START OF FIX ---
+    // We create placeholder functions for each analysis type.
+    // You would replace the logic inside these with your real analysis.
+
+    /**
+     * Placeholder for a real keyword analysis.
+     * @returns {object} A hard-coded data object with "keyword" scores.
+     */
+    function performKeywordAnalysis(resumeText, jdText, mode) {
+      // In a real app, you would:
+      // 1. Clean and tokenize both texts.
+      // 2. Count word frequencies in the JD (Job Description).
+      // 3. Find how many of those keywords appear in the resume.
+      // 4. Calculate a score based on the overlap.
+      
+      // For this demonstration, we'll return a *different* set of scores
+      // to prove the logic is working.
+      return {
+        overall_score: { percentage: 76, mode: mode, thresholds: { excellent: "85-100", strong: "70-84", moderate: "50-69", weak: "0-49" } },
+        sub_scores: {
+          resume_skills_match: 85,
+          tools_tech_skills: 78,
+          certifications_alignment: 65,
+          work_experience_match: 75,
+          education_match: 80,
+          ats_compliance_readability: 95
+        },
+        recommendations: [
+          { priority: 'high', suggestion: 'Strong keyword overlap detected in Skills and Tools sections.' },
+          { priority: 'medium', suggestion: 'Work experience section could be tailored to better match job title keywords.' },
+          { priority: 'low', suggestion: 'Consider adding keywords from the JD\'s "company culture" section.' }
+        ],
+        strengths: ['Excellent keyword match for core skills.', 'Tools and technologies are well-represented.', 'ATS formatting is clean.'],
+        gaps: ['Work experience titles don\'t directly match JD.', 'Education section is missing some keywords.'],
+        heatmap: [
+          { jd_requirement: 'Python', resume_section: 'Skills', confidence: 0.95, evidence: 'Python, SQL, R used in analytics projects.' },
+          { jd_requirement: 'Data Visualization', resume_section: 'Projects', confidence: 0.80, evidence: 'Tableau, PowerBI' },
+          { jd_requirement: 'Stakeholder Management', resume_section: 'Experience', confidence: 0.5, evidence: 'Coordinated deliverables.' },
+        ],
+        metadata: createMetadata(mode),
+        compliance_flags: []
+      };
+    }
+
+    /**
+     * Placeholder for a real semantic analysis.
+     * @returns {object} A hard-coded data object with "semantic" scores.
+     */
+    function performSemanticAnalysis(resumeText, jdText, mode) {
+      // In a real app, this is much more complex. You would:
+      // 1. Send the resumeText and jdText to a machine learning model
+      //    or an API (like the Gemini API) for semantic comparison.
+      // 2. The API would return a score based on conceptual similarity,
+      //    not just exact keyword matches.
+
+      // For this demonstration, we'll return the original scores.
+      return {
+        overall_score: { percentage: 58, mode: mode, thresholds: { excellent: "85-100", strong: "70-84", moderate: "50-69", weak: "0-49" } },
+        sub_scores: {
+          resume_skills_match: 70,
+          tools_tech_skills: 82,
+          certifications_alignment: 60,
+          work_experience_match: 45,
+          education_match: 50,
+          ats_compliance_readability: 100
+        },
+        recommendations: [
+          { priority: 'high', suggestion: 'Emphasize Python/SQL achievements tied to measurable outcomes (semantically weak).' },
+          { priority: 'medium', suggestion: 'Add recent projects demonstrating ML experimentation or BI dashboards.' },
+          { priority: 'low', suggestion: 'Mirror top JD phrases in bullet points to improve ATS keyword matching.' }
+        ],
+        strengths: ['Tools coverage looks solid (Python, SQL, BI).', 'ATS formatting reads clearly.', 'Core skills align with JD themes.'],
+        gaps: ['Recent role impact not explicit.', 'Education/certs not highlighted near top.'],
+        heatmap: [
+          { jd_requirement: 'Python', resume_section: 'Skills', confidence: 0.85, evidence: 'Python, SQL, R used in analytics projects.' },
+          { jd_requirement: 'Machine Learning', resume_section: 'Projects', confidence: 0.65, evidence: 'Built classification models with scikit-learn.' },
+          { jd_requirement: 'Project Management', resume_section: 'Experience', confidence: 0.4, evidence: 'Coordinated deliverables, agile sprints.' },
+        ],
+        metadata: createMetadata(mode),
+        compliance_flags: []
+      };
+    }
+
+    /**
+     * Helper function to create the metadata object.
+     */
+    function createMetadata(mode) {
+      return {
+        resume_filename: document.getElementById('resume-upload').files[0]?.name || "pasted_text",
+        job_description_filename: document.getElementById('jd-upload').files[0]?.name || "pasted_text",
+        analysis_mode: mode,
+        analysis_timestamp: new Date().toISOString(),
+        privacy: "No data stored after session"
+      };
+    }
+
+
+    scanBtn.addEventListener('click', async () => {
       const resumeText = resumeInput.value;
       const jdText = jdInput.value;
       const mode = document.querySelector('input[name="analysis-mode"]:checked').value;
 
       if (!resumeText.trim() || !jdText.trim()) {
+        // Use a less intrusive modal/alert in a real app
         alert('Please provide both a resume and a job description.');
         return;
       }
@@ -257,44 +355,21 @@
       resultsContainer.classList.add('hidden');
       loadingState.classList.remove('hidden');
 
-      setTimeout(() => {
-        const data = {
-          overall_score: { percentage: 58, mode, thresholds: { excellent: "85-100", strong: "70-84", moderate: "50-69", weak: "0-49" } },
-          sub_scores: {
-            resume_skills_match: 70,
-            tools_tech_skills: 82,
-            certifications_alignment: 60,
-            work_experience_match: 45,
-            education_match: 50,
-            ats_compliance_readability: 100
-          },
-          recommendations: [
-            { priority: 'high', suggestion: 'Emphasize Python/SQL achievements tied to measurable outcomes.' },
-            { priority: 'medium', suggestion: 'Add recent projects demonstrating ML experimentation or BI dashboards.' },
-            { priority: 'low', suggestion: 'Mirror top JD phrases in bullet points to improve ATS keyword matching.' }
-          ],
-          strengths: ['Tools coverage looks solid (Python, SQL, BI).', 'ATS formatting reads clearly.', 'Core skills align with JD themes.'],
-          gaps: ['Recent role impact not explicit.', 'Education/certs not highlighted near top.'],
-          heatmap: [
-            { jd_requirement: 'Python', resume_section: 'Skills', confidence: 0.85, evidence: 'Python, SQL, R used in analytics projects.' },
-            { jd_requirement: 'Machine Learning', resume_section: 'Projects', confidence: 0.65, evidence: 'Built classification models with scikit-learn.' },
-            { jd_requirement: 'Project Management', resume_section: 'Experience', confidence: 0.4, evidence: 'Coordinated deliverables, agile sprints.' },
-          ],
-          metadata: {
-            resume_filename: document.getElementById('resume-upload').files[0]?.name || "pasted_text",
-            job_description_filename: document.getElementById('jd-upload').files[0]?.name || "pasted_text",
-            analysis_mode: mode,
-            analysis_timestamp: new Date().toISOString(),
-            privacy: "No data stored after session"
-          },
-          compliance_flags: []
-        };
+      // Simulate a network request or heavy calculation
+      await new Promise(resolve => setTimeout(resolve, 900));
+      
+      let data;
+      if (mode === 'keyword') {
+        data = performKeywordAnalysis(resumeText, jdText, mode);
+      } else {
+        data = performSemanticAnalysis(resumeText, jdText, mode);
+      }
+      // --- END OF FIX ---
 
-        renderResults(data);
-        loadingState.classList.add('hidden');
-        resultsContainer.classList.remove('hidden');
-        resultsContainer.scrollIntoView({ behavior: 'smooth' });
-      }, 900);
+      renderResults(data);
+      loadingState.classList.add('hidden');
+      resultsContainer.classList.remove('hidden');
+      resultsContainer.scrollIntoView({ behavior: 'smooth' });
     });
 
     clearBtn.addEventListener('click', () => {
@@ -316,15 +391,21 @@
 
       if (file.type === "application/pdf") {
         reader.onload = async (e) => {
-          const pdfData = new Uint8Array(e.target.result);
-          const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
-          let textContent = '';
-          for (let i = 1; i <= pdf.numPages; i++) {
-            const page = await pdf.getPage(i);
-            const text = await page.getTextContent();
-            textContent += text.items.map(item => item.str).join(' ') + '\n';
+          try {
+            const pdfData = new Uint8Array(e.target.result);
+            const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
+            let textContent = '';
+            for (let i = 1; i <= pdf.numPages; i++) {
+              const page = await pdf.getPage(i);
+              const text = await page.getTextContent();
+              textContent += text.items.map(item => item.str).join(' ') + '\n';
+            }
+            textarea.value = textContent;
+          } catch (err) {
+            console.error("Error parsing PDF file:", err);
+            alert("Could not read the PDF file. It may be corrupted or encrypted.");
+            textarea.value = '';
           }
-          textarea.value = textContent;
         };
         reader.readAsArrayBuffer(file);
       } else if (file.name.endsWith('.docx') || file.name.endsWith('.doc')) {
@@ -338,9 +419,12 @@
             });
         };
         reader.readAsArrayBuffer(file);
-      } else {
+      } else if (file.type === "text/plain") {
         reader.onload = (e) => { textarea.value = e.target.result; };
         reader.readAsText(file);
+      } else {
+        alert("Unsupported file type. Please upload .pdf, .docx, .doc, or .txt");
+        event.target.value = ''; // Clear the file input
       }
     }
 
@@ -391,7 +475,7 @@
                 stroke-width="12"
                 stroke-linecap="round"
                 stroke-dasharray="${circumference} ${circumference}"
-                style="stroke-dashoffset: ${circumference}"
+                style="stroke-dashoffset: ${circumference}; transition: stroke-dashoffset 0.8s ease-out;"
                 data-offset="${offset}"
                 fill="transparent"
                 r="${radius}" cx="80" cy="80"/>
@@ -412,7 +496,7 @@
                   <span class="text-sm font-medium ${getScoreColor(value)}">${value}%</span>
                 </div>
                 <div class="w-full bg-gray-700 rounded-full h-2.5">
-                  <div class="${getScoreBgColor(value)} h-2.5 rounded-full" style="width: ${value}%"></div>
+                  <div class="${getScoreBgColor(value)} h-2.5 rounded-full" style="width: ${value}%; transition: width 0.5s ease-out;"></div>
                 </div>
               </div>
             `).join('')}
@@ -425,7 +509,7 @@
             ${data.recommendations.map(rec => `
               <li class="flex items-start">
                 <span class="mr-3 mt-1 inline-block h-5 w-5 rounded-full ${rec.priority === 'high' ? 'bg-red-500' : rec.priority === 'medium' ? 'bg-yellow-500' : 'bg-green-500'} flex-shrink-0"></span>
-                <span><span class="font-bold capitalize">${rec.priority}:</span> ${rec.suggestion}</span>
+                <span><span classa="font-bold capitalize">${rec.priority.charAt(0).toUpperCase() + rec.priority.slice(1)}:</span> ${rec.suggestion}</span>
               </li>
             `).join('')}
           </ul>
@@ -485,19 +569,47 @@
 
       resultsContainer.innerHTML = resultsHTML;
 
+      // Animate the progress ring
       const circle = document.querySelector('.progress-ring__circle');
       if (circle) {
         const targetOffset = circle.dataset.offset;
+        // This timeout ensures the element is in the DOM before we try to animate it
         setTimeout(() => { circle.style.strokeDashoffset = targetOffset; }, 100);
       }
 
+      // Add event listener for the new copy button
       const copyBtn = document.getElementById('copy-json-btn');
       if (copyBtn) {
         copyBtn.addEventListener('click', () => {
-          navigator.clipboard.writeText(document.getElementById('json-output').textContent);
-          alert('JSON copied to clipboard!');
+          // Use the 'json-output' content directly
+          const jsonText = document.getElementById('json-output').textContent;
+          try {
+            // Use execCommand for broader compatibility in sandboxed environments
+            const textArea = document.createElement("textarea");
+            textArea.value = jsonText;
+            textArea.style.position = "fixed";  // Avoid scrolling to bottom
+            textArea.style.top = "0";
+            textArea.style.left = "0";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            alert('JSON copied to clipboard!');
+          } catch (err) {
+            console.error('Fallback copy failed: ', err);
+            // Fallback if execCommand fails
+            navigator.clipboard.writeText(jsonText).then(() => {
+              alert('JSON copied to clipboard!');
+            }, (err) => {
+              alert('Could not copy JSON.');
+              console.error('Async clipboard copy failed: ', err);
+            });
+          }
         });
       }
+      
+      // Add event listener for the new export button
       const exportBtn = document.getElementById('export-pdf-btn');
       if (exportBtn) {
         exportBtn.addEventListener('click', () => exportReportAsPDF(data));
@@ -518,8 +630,15 @@
       doc.setTextColor(0);
       doc.text("Overall Match Score", 20, 45);
       doc.setFontSize(28);
-      doc.setTextColor(data.overall_score.percentage >= 85 ? '#22c55e' : data.overall_score.percentage >= 70 ? '#f59e0b' : '#ef4444');
+      
+      let scoreColor = '#ef4444'; // red
+      if (data.overall_score.percentage >= 85) scoreColor = '#22c55e'; // green
+      else if (data.overall_score.percentage >= 70) scoreColor = '#f59e0b'; // yellow
+      else if (data.overall_score.percentage >= 50) scoreColor = '#f97316'; // orange
+      
+      doc.setTextColor(scoreColor);
       doc.text(`${data.overall_score.percentage}%`, 20, 55);
+      doc.setTextColor(0); // Reset color
 
       doc.autoTable({
         startY: 65,
@@ -567,6 +686,7 @@
     }
 
     function drawNeural() {
+      if (!ctx) return; // Exit if canvas context isn't available
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       // Nodes
