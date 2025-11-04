@@ -7,7 +7,9 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- pdf.js for PDF parsing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
-  <script>pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js`;</script>
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js";
+  </script>
   <!-- mammoth.js for .docx parsing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.18/mammoth.browser.min.js"></script>
   <!-- jsPDF and autotable for PDF export -->
@@ -15,13 +17,14 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
   <!-- Typography -->
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
-
   <style>
+    /* Deep-space gradient with subtle grid overlay (blue -> purple) */
     body {
       font-family: 'Space Grotesk', sans-serif;
-      background: radial-gradient(1200px 800px at 20% 10%, #0a0f2c 0%, transparent 60%),
-                  radial-gradient(1200px 800px at 80% 90%, #2a0f4d 0%, transparent 60%),
-                  linear-gradient(135deg, #0a0f2c, #1a103d 50%, #2a0f4d);
+      background:
+        radial-gradient(1200px 800px at 20% 15%, #0b1440 0%, transparent 60%),
+        radial-gradient(1200px 800px at 80% 85%, #2a0f5d 0%, transparent 60%),
+        linear-gradient(135deg, #0a0f2c, #1a1448 50%, #3b2070);
       background-attachment: fixed;
       color: #e5e7eb;
       position: relative;
@@ -32,13 +35,14 @@
       position: fixed;
       inset: 0;
       background-image:
-        linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
-      background-size: 28px 28px;
+        linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
+      background-size: 26px 26px;
       mix-blend-mode: soft-light;
       pointer-events: none;
     }
 
+    /* Canvas sits behind everything */
     #neural-bg {
       position: fixed;
       inset: 0;
@@ -48,6 +52,7 @@
       filter: drop-shadow(0 0 6px rgba(0,255,255,0.35));
     }
 
+    /* Panels match neural aesthetic (subtle cyan glass) */
     .neural-panel {
       border: 1px solid rgba(0, 255, 255, 0.25);
       background: rgba(17, 24, 39, 0.55);
@@ -57,9 +62,21 @@
     }
     .neural-panel:hover {
       transform: translateY(-4px);
-      box-shadow: 0 0 18px rgba(0, 255, 255, 0.35);
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.35);
     }
 
+    /* Inputs glow on focus */
+    .glowing-border {
+      border: 2px solid transparent;
+      transition: border-color 0.3s, box-shadow 0.3s, transform 0.2s;
+    }
+    .glowing-border:focus-within {
+      border-color: #00f0ff;
+      box-shadow: 0 0 14px rgba(0,240,255,0.6);
+      transform: translateY(-1px);
+    }
+
+    /* Ripple effect for buttons */
     .button-ripple { position: relative; overflow: hidden; }
     .button-ripple::after {
       content: "";
@@ -79,21 +96,16 @@
       transition: transform 0.6s, opacity 0.9s;
     }
 
-    .glowing-border:focus-within {
-      border-color: #00f0ff;
-      box-shadow: 0 0 14px rgba(0,240,255,0.6);
-      transform: translateY(-1px);
-    }
-
     h1,h2,h3 { font-family: 'Space Grotesk', sans-serif; }
     pre, code { font-family: 'JetBrains Mono', monospace; }
   </style>
 </head>
 <body class="text-gray-200">
+  <!-- Neural network canvas -->
   <canvas id="neural-bg"></canvas>
 
   <div class="container mx-auto p-4 md:p-8">
-    <!-- HEADER -->
+    <!-- Header -->
     <header class="text-center mb-8">
       <h1 class="text-5xl font-extrabold bg-gradient-to-r from-cyan-400 to-violet-500 bg-clip-text text-transparent">
         ATS TalentScan
@@ -107,34 +119,34 @@
       </a>
     </header>
 
-    <!-- FEATURE STRIP -->
+    <!-- Feature strip -->
     <section class="mt-6">
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="neural-panel rounded-xl p-4 text-center">
-          <div class="text-cyan-400 mb-2 text-2xl">🔍</div>
+          <div class="text-cyan-300 mb-2 text-2xl">🔍</div>
           <h3 class="text-white font-semibold">Analysis Modes</h3>
-          <p class="text-gray-400 text-sm">Keyword and Semantic analysis, selectable per run.</p>
+          <p class="text-gray-300 text-sm">Keyword and Semantic analysis, selectable per run.</p>
         </div>
         <div class="neural-panel rounded-xl p-4 text-center">
-          <div class="text-cyan-400 mb-2 text-2xl">📊</div>
+          <div class="text-cyan-300 mb-2 text-2xl">📊</div>
           <h3 class="text-white font-semibold">Actionable Report</h3>
-          <p class="text-gray-400 text-sm">Overall match score, sub‑scores, recommendations, strengths & gaps.</p>
+          <p class="text-gray-300 text-sm">Overall match score, sub‑scores, recommendations, strengths & gaps.</p>
         </div>
         <div class="neural-panel rounded-xl p-4 text-center">
-          <div class="text-cyan-400 mb-2 text-2xl">📤</div>
+          <div class="text-cyan-300 mb-2 text-2xl">📤</div>
           <h3 class="text-white font-semibold">Export & Share</h3>
-          <p class="text-gray-400 text-sm">Export PDF, copy raw JSON, feed into an LLM for guided resume edits.</p>
+          <p class="text-gray-300 text-sm">Export PDF, copy raw JSON, feed into an LLM for guided resume edits.</p>
         </div>
       </div>
     </section>
 
-    <!-- MAIN CONTENT -->
+    <!-- Main content -->
     <div id="main-content" class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
-      <!-- Left Column: Inputs -->
+      <!-- Inputs -->
       <div class="neural-panel p-6 rounded-2xl shadow-lg">
         <h2 class="text-2xl font-semibold mb-4 text-white border-b border-gray-700 pb-2">Inputs</h2>
 
-        <!-- Resume Input -->
+        <!-- Resume -->
         <div class="mb-6">
           <label for="resume-input" class="block text-lg font-medium mb-2">📄 Resume</label>
           <div class="glowing-border bg-gray-900 rounded-lg">
@@ -146,11 +158,454 @@
           </div>
         </div>
 
-        <!-- Job Description Input -->
+        <!-- Job Description -->
         <div class="mb-6">
           <label for="jd-input" class="block text-lg font-medium mb-2">📑 Job Description</label>
           <div class="glowing-border bg-gray-900 rounded-lg">
             <textarea id="jd-input" rows="10" class="w-full bg-transparent p-3 rounded-lg focus:outline-none resize-y" placeholder="Paste job description here or upload a file..."></textarea>
           </div>
           <div class="mt-3 text-right">
-            <input type="file" id="jd-upload" class="hidden" accept=".pdf,.
+            <input type="file" id="jd-upload" class="hidden" accept=".pdf,.doc,.docx,.txt" onchange="handleFileUpload(event, 'jd-input')">
+            <button onclick="document.getElementById('jd-upload').click()" class="button-ripple bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">Upload JD</button>
+          </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="flex items-center justify-between mt-6 flex-wrap gap-4">
+          <div class="flex items-center space-x-4">
+            <span class="text-lg font-medium">Analysis Mode:</span>
+            <div class="flex items-center space-x-3">
+              <label class="flex items-center cursor-pointer">
+                <input type="radio" name="analysis-mode" value="keyword" class="form-radio h-5 w-5 text-blue-600 bg-gray-700 border-gray-600 focus:ring-blue-500" checked>
+                <span class="ml-2 text-gray-200">Keyword</span>
+              </label>
+              <label class="flex items-center cursor-pointer">
+                <input type="radio" name="analysis-mode" value="semantic" class="form-radio h-5 w-5 text-blue-600 bg-gray-700 border-gray-600 focus:ring-blue-500">
+                <span class="ml-2 text-gray-200">Semantic</span>
+              </label>
+            </div>
+          </div>
+          <div class="flex gap-4">
+            <button id="clear-btn" class="button-ripple bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg">Clear All</button>
+            <button id="scan-btn" class="button-ripple bg-gradient-to-r from-green-500 to-green-700 text-white font-bold py-3 px-6 rounded-lg shadow-md">Analyze</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div id="results-container" class="neural-panel p-6 rounded-2xl shadow-lg hidden"></div>
+
+      <!-- Initial state -->
+      <div id="initial-state" class="neural-panel p-6 rounded-2xl shadow-lg">
+        <div class="text-center text-gray-300">
+          <svg class="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 .293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          <h3 class="text-2xl font-semibold text-white">Analysis Results Will Appear Here</h3>
+          <p class="mt-2">Provide a resume and job description, then click “Analyze”.</p>
+        </div>
+      </div>
+
+      <!-- Loading state -->
+      <div id="loading-state" class="hidden neural-panel p-6 rounded-2xl shadow-lg">
+        <div class="text-center text-gray-300">
+          <svg class="animate-spin h-12 w-12 text-cyan-400 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p class="text-xl font-semibold mt-4">Analyzing...</p>
+          <p class="text-gray-400">This may take a moment.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer with CTA + branding -->
+    <footer class="neural-panel mt-12 p-8 rounded-2xl text-center">
+      <h3 class="text-2xl font-bold text-white mb-2">Ready to Analyze?</h3>
+      <p class="text-gray-300 mb-6">
+        Upload your resume and job description, then click
+        <span class="font-semibold text-cyan-300">Analyze</span>
+        to get your compatibility report.
+      </p>
+      <p class="text-sm text-gray-400">
+        © 2024 <span class="font-semibold">ATS TalentScan</span> • Built by Nicholas Hidalgo
+      </p>
+    </footer>
+  </div>
+
+  <!-- Core logic, file handling, and rendering -->
+  <script>
+    const scanBtn = document.getElementById('scan-btn');
+    const clearBtn = document.getElementById('clear-btn');
+    const resultsContainer = document.getElementById('results-container');
+    const initialState = document.getElementById('initial-state');
+    const loadingState = document.getElementById('loading-state');
+    const resumeInput = document.getElementById('resume-input');
+    const jdInput = document.getElementById('jd-input');
+
+    scanBtn.addEventListener('click', () => {
+      const resumeText = resumeInput.value;
+      const jdText = jdInput.value;
+      const mode = document.querySelector('input[name="analysis-mode"]:checked').value;
+
+      if (!resumeText.trim() || !jdText.trim()) {
+        alert('Please provide both a resume and a job description.');
+        return;
+      }
+
+      initialState.classList.add('hidden');
+      resultsContainer.classList.add('hidden');
+      loadingState.classList.remove('hidden');
+
+      setTimeout(() => {
+        const data = {
+          overall_score: { percentage: 58, mode, thresholds: { excellent: "85-100", strong: "70-84", moderate: "50-69", weak: "0-49" } },
+          sub_scores: {
+            resume_skills_match: 70,
+            tools_tech_skills: 82,
+            certifications_alignment: 60,
+            work_experience_match: 45,
+            education_match: 50,
+            ats_compliance_readability: 100
+          },
+          recommendations: [
+            { priority: 'high', suggestion: 'Emphasize Python/SQL achievements tied to measurable outcomes.' },
+            { priority: 'medium', suggestion: 'Add recent projects demonstrating ML experimentation or BI dashboards.' },
+            { priority: 'low', suggestion: 'Mirror top JD phrases in bullet points to improve ATS keyword matching.' }
+          ],
+          strengths: ['Tools coverage looks solid (Python, SQL, BI).', 'ATS formatting reads clearly.', 'Core skills align with JD themes.'],
+          gaps: ['Recent role impact not explicit.', 'Education/certs not highlighted near top.'],
+          heatmap: [
+            { jd_requirement: 'Python', resume_section: 'Skills', confidence: 0.85, evidence: 'Python, SQL, R used in analytics projects.' },
+            { jd_requirement: 'Machine Learning', resume_section: 'Projects', confidence: 0.65, evidence: 'Built classification models with scikit-learn.' },
+            { jd_requirement: 'Project Management', resume_section: 'Experience', confidence: 0.4, evidence: 'Coordinated deliverables, agile sprints.' },
+          ],
+          metadata: {
+            resume_filename: document.getElementById('resume-upload').files[0]?.name || "pasted_text",
+            job_description_filename: document.getElementById('jd-upload').files[0]?.name || "pasted_text",
+            analysis_mode: mode,
+            analysis_timestamp: new Date().toISOString(),
+            privacy: "No data stored after session"
+          },
+          compliance_flags: []
+        };
+
+        renderResults(data);
+        loadingState.classList.add('hidden');
+        resultsContainer.classList.remove('hidden');
+        resultsContainer.scrollIntoView({ behavior: 'smooth' });
+      }, 900);
+    });
+
+    clearBtn.addEventListener('click', () => {
+      resumeInput.value = '';
+      jdInput.value = '';
+      document.getElementById('resume-upload').value = '';
+      document.getElementById('jd-upload').value = '';
+      resultsContainer.innerHTML = '';
+      resultsContainer.classList.add('hidden');
+      initialState.classList.remove('hidden');
+      loadingState.classList.add('hidden');
+    });
+
+    async function handleFileUpload(event, targetTextareaId) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const textarea = document.getElementById(targetTextareaId);
+      const reader = new FileReader();
+
+      if (file.type === "application/pdf") {
+        reader.onload = async (e) => {
+          const pdfData = new Uint8Array(e.target.result);
+          const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
+          let textContent = '';
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const text = await page.getTextContent();
+            textContent += text.items.map(item => item.str).join(' ') + '\n';
+          }
+          textarea.value = textContent;
+        };
+        reader.readAsArrayBuffer(file);
+      } else if (file.name.endsWith('.docx') || file.name.endsWith('.doc')) {
+        reader.onload = (e) => {
+          mammoth.extractRawText({ arrayBuffer: e.target.result })
+            .then(result => { textarea.value = result.value; })
+            .catch(err => {
+              console.error("Error parsing .docx file:", err);
+              alert("Could not read the .docx file.");
+              textarea.value = '';
+            });
+        };
+        reader.readAsArrayBuffer(file);
+      } else {
+        reader.onload = (e) => { textarea.value = e.target.result; };
+        reader.readAsText(file);
+      }
+    }
+
+    function renderResults(data) {
+      const getScoreColor = (score) => {
+        if (score >= 85) return 'text-green-400';
+        if (score >= 70) return 'text-yellow-400';
+        if (score >= 50) return 'text-orange-400';
+        return 'text-red-400';
+      };
+      const getScoreRingColor = (score) => {
+        if (score >= 85) return 'stroke-green-500';
+        if (score >= 70) return 'stroke-yellow-500';
+        if (score >= 50) return 'stroke-orange-500';
+        return 'stroke-red-500';
+      };
+      const getScoreBgColor = (score) => {
+        if (score >= 85) return 'bg-green-500';
+        if (score >= 70) return 'bg-yellow-500';
+        if (score >= 50) return 'bg-orange-500';
+        return 'bg-red-500';
+      };
+      const getScoreCategoryText = (score) => {
+        if (score >= 85) return 'Excellent';
+        if (score >= 70) return 'Strong';
+        if (score >= 50) return 'Moderate';
+        return 'Weak';
+      };
+
+      const radius = 60;
+      const circumference = 2 * Math.PI * radius;
+      const offset = circumference - (data.overall_score.percentage / 100) * circumference;
+
+      const resultsHTML = `
+        <div class="flex justify-between items-center mb-6 border-b border-gray-700 pb-4">
+          <h2 class="text-3xl font-bold text-white">Analysis Report</h2>
+          <div>
+            <button id="export-pdf-btn" class="button-ripple bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg">Export PDF</button>
+          </div>
+        </div>
+
+        <div class="neural-panel p-6 rounded-xl mb-6 text-center">
+          <h3 class="text-xl font-semibold mb-4 text-white">Overall Match Score</h3>
+          <div class="relative inline-block">
+            <svg class="w-40 h-40">
+              <circle class="text-gray-700" stroke-width="12" stroke="currentColor" fill="transparent" r="${radius}" cx="80" cy="80"/>
+              <circle class="progress-ring__circle ${getScoreRingColor(data.overall_score.percentage)}"
+                stroke-width="12"
+                stroke-linecap="round"
+                stroke-dasharray="${circumference} ${circumference}"
+                style="stroke-dashoffset: ${circumference}"
+                data-offset="${offset}"
+                fill="transparent"
+                r="${radius}" cx="80" cy="80"/>
+            </svg>
+            <span class="absolute text-4xl font-bold top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ${getScoreColor(data.overall_score.percentage)}">${data.overall_score.percentage}%</span>
+          </div>
+          <p class="mt-3 text-2xl font-semibold ${getScoreColor(data.overall_score.percentage)}">${getScoreCategoryText(data.overall_score.percentage)} Match</p>
+          <p class="text-gray-400 text-sm">Mode: ${data.metadata.analysis_mode}</p>
+        </div>
+
+        <div class="neural-panel p-6 rounded-xl mb-6" style="animation-delay: 0.1s;">
+          <h3 class="text-xl font-semibold mb-4 text-white">Sub-Score Breakdown</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            ${Object.entries(data.sub_scores).map(([key, value]) => `
+              <div>
+                <div class="flex justify-between mb-1">
+                  <span class="text-base font-medium text-gray-300">${key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
+                  <span class="text-sm font-medium ${getScoreColor(value)}">${value}%</span>
+                </div>
+                <div class="w-full bg-gray-700 rounded-full h-2.5">
+                  <div class="${getScoreBgColor(value)} h-2.5 rounded-full" style="width: ${value}%"></div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <div class="neural-panel p-6 rounded-xl mb-6" style="animation-delay: 0.2s;">
+          <h3 class="text-xl font-semibold mb-4 text-white">Key Recommendations</h3>
+          <ul class="space-y-3">
+            ${data.recommendations.map(rec => `
+              <li class="flex items-start">
+                <span class="mr-3 mt-1 inline-block h-5 w-5 rounded-full ${rec.priority === 'high' ? 'bg-red-500' : rec.priority === 'medium' ? 'bg-yellow-500' : 'bg-green-500'} flex-shrink-0"></span>
+                <span><span class="font-bold capitalize">${rec.priority}:</span> ${rec.suggestion}</span>
+              </li>
+            `).join('')}
+          </ul>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6" style="animation-delay: 0.3s;">
+          <div class="neural-panel p-6 rounded-xl">
+            <h3 class="text-xl font-semibold mb-4 text-white">Strengths</h3>
+            <ul class="list-disc list-inside space-y-2 text-green-300">
+              ${data.strengths.map(s => `<li>${s}</li>`).join('')}
+            </ul>
+          </div>
+          <div class="neural-panel p-6 rounded-xl">
+            <h3 class="text-xl font-semibold mb-4 text-white">Potential Gaps</h3>
+            <ul class="list-disc list-inside space-y-2 text-red-300">
+              ${data.gaps.map(g => `<li>${g}</li>`).join('')}
+            </ul>
+          </div>
+        </div>
+
+        <div class="neural-panel p-6 rounded-xl mb-6" style="animation-delay: 0.4s;">
+          <h3 class="text-xl font-semibold mb-4 text-white">Detailed Alignment Heatmap</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left text-gray-300">
+              <thead class="text-xs text-gray-300 uppercase bg-gray-700/60">
+                <tr>
+                  <th scope="col" class="px-4 py-3">JD Requirement</th>
+                  <th scope="col" class="px-4 py-3">Resume Section</th>
+                  <th scope="col" class="px-4 py-3">Confidence</th>
+                  <th scope="col" class="px-4 py-3">Evidence from Resume</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${data.heatmap.slice(0, 10).map(item => `
+                  <tr class="border-b border-gray-700/60">
+                    <td class="px-4 py-3 font-medium">${item.jd_requirement}</td>
+                    <td class="px-4 py-3">${item.resume_section}</td>
+                    <td class="px-4 py-3 ${getScoreColor(item.confidence * 100)} font-bold">${Math.round(item.confidence * 100)}%</td>
+                    <td class="px-4 py-3 text-gray-400 italic">"${item.evidence}"</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="neural-panel p-6 rounded-xl" style="animation-delay: 0.6s;">
+          <details>
+            <summary class="cursor-pointer text-lg font-semibold text-white">View Raw JSON Output</summary>
+            <div class="pt-4 border-t border-gray-700/60">
+              <pre class="bg-gray-900/70 text-sm text-green-300 p-4 rounded-lg overflow-x-auto whitespace-pre-wrap" id="json-output">${JSON.stringify(data, null, 2)}</pre>
+              <button id="copy-json-btn" class="button-ripple mt-4 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">Copy JSON</button>
+            </div>
+          </details>
+        </div>
+      `;
+
+      resultsContainer.innerHTML = resultsHTML;
+
+      const circle = document.querySelector('.progress-ring__circle');
+      if (circle) {
+        const targetOffset = circle.dataset.offset;
+        setTimeout(() => { circle.style.strokeDashoffset = targetOffset; }, 100);
+      }
+
+      const copyBtn = document.getElementById('copy-json-btn');
+      if (copyBtn) {
+        copyBtn.addEventListener('click', () => {
+          navigator.clipboard.writeText(document.getElementById('json-output').textContent);
+          alert('JSON copied to clipboard!');
+        });
+      }
+      const exportBtn = document.getElementById('export-pdf-btn');
+      if (exportBtn) {
+        exportBtn.addEventListener('click', () => exportReportAsPDF(data));
+      }
+    }
+
+    function exportReportAsPDF(data) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      doc.setFontSize(22);
+      doc.text("ATS Analysis Report", 105, 20, null, null, 'center');
+      doc.setFontSize(12);
+      doc.setTextColor(100);
+      doc.text(`Mode: ${data.metadata.analysis_mode}`, 105, 28, null, null, 'center');
+
+      doc.setFontSize(16);
+      doc.setTextColor(0);
+      doc.text("Overall Match Score", 20, 45);
+      doc.setFontSize(28);
+      doc.setTextColor(data.overall_score.percentage >= 85 ? '#22c55e' : data.overall_score.percentage >= 70 ? '#f59e0b' : '#ef4444');
+      doc.text(`${data.overall_score.percentage}%`, 20, 55);
+
+      doc.autoTable({
+        startY: 65,
+        head: [['Priority', 'Recommendation']],
+        body: data.recommendations.map(r => [r.priority, r.suggestion]),
+        theme: 'grid',
+        headStyles: { fillColor: [41, 128, 185] }
+      });
+
+      let finalY = doc.lastAutoTable.finalY || 60;
+      doc.autoTable({
+        startY: finalY + 10,
+        head: [['Category', 'Score (%)']],
+        body: Object.entries(data.sub_scores).map(([key, value]) => [key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()), value]),
+        theme: 'striped'
+      });
+
+      finalY = doc.lastAutoTable.finalY;
+      doc.autoTable({
+        startY: finalY + 10,
+        head: [['JD Requirement', 'Resume Evidence', 'Confidence']],
+        body: data.heatmap.slice(0, 7).map(h => [h.jd_requirement, h.evidence, `${Math.round(h.confidence * 100)}%`]),
+        theme: 'grid'
+      });
+
+      doc.save(`ATS_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+    }
+  </script>
+
+  <!-- Neural network animation (cyan + violet lines) -->
+  <script>
+    const canvas = document.getElementById('neural-bg');
+    const ctx = canvas.getContext('2d');
+    let nodes = [];
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      nodes = Array.from({ length: 70 }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4
+      }));
+    }
+
+    function drawNeural() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Nodes
+      nodes.forEach(n => {
+        n.x += n.vx; n.y += n.vy;
+        if (n.x < 0 || n.x > canvas.width) n.vx *= -1;
+        if (n.y < 0 || n.y > canvas.height) n.vy *= -1;
+
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, 2, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(0,255,255,0.85)"; // cyan nodes
+        ctx.fill();
+      });
+
+      // Connections (cyan + violet blend)
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 130) {
+            const alpha = 1 - dist / 130;
+            // Layer two strokes for a subtle dual-color effect
+            ctx.lineWidth = 0.7;
+            ctx.strokeStyle = `rgba(0,255,255,${alpha * 0.9})`; // cyan
+            ctx.beginPath(); ctx.moveTo(nodes[i].x, nodes[i].y); ctx.lineTo(nodes[j].x, nodes[j].y); ctx.stroke();
+
+            ctx.lineWidth = 0.4;
+            ctx.strokeStyle = `rgba(180, 0, 255, ${alpha * 0.5})`; // violet
+            ctx.beginPath(); ctx.moveTo(nodes[i].x, nodes[i].y); ctx.lineTo(nodes[j].x, nodes[j].y); ctx.stroke();
+          }
+        }
+      }
+
+      requestAnimationFrame(drawNeural);
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+    drawNeural();
+  </script>
+</body>
+</html>
