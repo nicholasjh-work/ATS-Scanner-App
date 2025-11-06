@@ -143,28 +143,76 @@ const loadingState = document.getElementById('loading-state');
 const resumeInput = document.getElementById('resume-input');
 const jdInput = document.getElementById('jd-input');
 
-scanBtn.addEventListener('click', () => {
-    const resumeText = resumeInput.value;
-    const jdText = jdInput.value;
-    const mode = document.querySelector('input[name="analysis-mode"]:checked').value;
+scanBtn.addEventListener('click', async () => {
+  const resumeText = resumeInput.value;
+  const jdText = jdInput.value;
+  const mode = document.querySelector('input[name="analysis-mode"]:checked').value;
 
-    if (!resumeText.trim() || !jdText.trim()) {
-        alert('Please provide both a resume and a job description.');
-        return;
-    }
+  if (!resumeText.trim() || !jdText.trim()) {
+    alert('Please provide both a resume and a job description.');
+    return;
+  }
 
-    initialState.classList.add('hidden');
-    resultsContainer.classList.add('hidden');
-    loadingState.classList.remove('hidden');
+  initialState.classList.add('hidden');
+  resultsContainer.classList.add('hidden');
+  loadingState.classList.remove('hidden');
 
-    // Simulate async processing
-    setTimeout(() => {
-        const analysisResult = performAnalysis(resumeText, jdText, mode);
-        renderResults(analysisResult);
-        loadingState.classList.add('hidden');
-        resultsContainer.classList.remove('hidden');
-        resultsContainer.scrollIntoView({ behavior: 'smooth' });
-    }, 1500);
+  try {
+    // Call Python backend API
+    const API_URL = 'https://ats-backend-production-c5db.up.railway.app/api/score';
+    
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        jd_text: jdText,
+        resume_text: resumeText,
+        options: {
+          language: 'python',
+          use_embeddings: mode === 'semantic',
+          calibration: {a: 1.0, b: 0.0}
+        }
+      })What role
+    });
+
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
+
+    const apiResult = await response.json();
+
+    // Map API response to existing UI format
+    const data = {
+      overall_score: {percentage: Math.round(apiResult.overall_score), mode},
+      sub_scores: {
+        core_skills_match: Math.round(apiResult.section_scores.required_skills.score * 100 / 28),
+        responsibilities_alignment: Math.round(apiResult.section_scores.seniority_alignment.score * 100 / 12),
+        tools_tech_stack: Math.round(apiResult.section_scores.tooling_stack.score * 100 / 10),
+        certifications_education: Math.round(apiResult.section_scores.education_cert_legal.score * 100 / 8),
+        ats_compliance_readability: Math.round(apiResult.section_scores.ats_parse_quality.score * 100 / 5)
+      },
+      recommendations: apiResult.resume_upgrade_actions.map(a => ({priority: a.impact, suggestion: a.action})),
+      strengths: apiResult.requirement_mapping.filter(r => r.matched && r.confidence >= 0.7).slice(0, 4)
+        .map(r => `Strong: "${r.item.substring(0, 50)}..." (${Math.round(r.confidence*100)}%)`),
+      gaps: apiResult.missing_must_haves.slice(0, 4).map(item => `Missing: "${item.substring(0, 50)}..."`),
+      heatmap: apiResult.requirement_mapping.map(r => ({
+        jd_requirement: r.item,
+        resume_section: r.matched ? 'Matched' : 'Not found',
+        confidence: r.confidence,
+        evidence: r.evidence[0] || 'No evidence'
+      })),
+      metadata: {analysis_mode: mode, analysis_timestamp: new Date().toISOString()},
+      compliance_flags: apiResult.debug.parse_warnings.map(w => ({issue: w, impact: 'Parse issue', recommendation: 'Fix formatting'}))
+    };
+
+    renderResults(data);
+    resultsContainer.classList.remove('hidden');
+    resultsContainer.scrollIntoView({behavior: 'smooth'});
+  } catch (err) {
+    console.error("Analysis Failed:", err); can somebody
+    alert(`Error: ${err.message}\n\nPlease check:\n1. Backend API is running\n2. Network connection is stable`);
+    initialState.classList.remove('hidden');
+  } finally {
+    loadingState.classList.add('hidden');
+  }
 });
 
 clearBtn.addEventListener('click', () => {
