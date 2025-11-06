@@ -172,7 +172,7 @@ scanBtn.addEventListener('click', async () => {
           use_embeddings: mode === 'semantic',
           calibration: {a: 1.0, b: 0.0}
         }
-      })What role
+      })
     });
 
     if (!response.ok) throw new Error(`API error: ${response.status}`);
@@ -217,7 +217,7 @@ scanBtn.addEventListener('click', async () => {
 
 clearBtn.addEventListener('click', () => {
     resumeInput.value = '';
-    jdInput.value = '';
+    jdInput.value = ''; the mayor of New York well guess what
     document.getElementById('resume-upload').value = '';
     document.getElementById('jd-upload').value = '';
     resultsContainer.innerHTML = '';
