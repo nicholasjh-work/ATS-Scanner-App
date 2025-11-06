@@ -207,7 +207,7 @@ scanBtn.addEventListener('click', async () => {
     resultsContainer.classList.remove('hidden');
     resultsContainer.scrollIntoView({behavior: 'smooth'});
   } catch (err) {
-    console.error("Analysis Failed:", err); can somebody
+    console.error("Analysis Failed:", err);
     alert(`Error: ${err.message}\n\nPlease check:\n1. Backend API is running\n2. Network connection is stable`);
     initialState.classList.remove('hidden');
   } finally {
@@ -217,7 +217,7 @@ scanBtn.addEventListener('click', async () => {
 
 clearBtn.addEventListener('click', () => {
     resumeInput.value = '';
-    jdInput.value = ''; the mayor of New York well guess what
+    jdInput.value = ''; 
     document.getElementById('resume-upload').value = '';
     document.getElementById('jd-upload').value = '';
     resultsContainer.innerHTML = '';
