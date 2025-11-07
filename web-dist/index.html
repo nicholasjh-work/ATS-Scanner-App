@@ -1,551 +1,745 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI-Powered ATS Simulation Tool</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- pdf.js for PDF parsing -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
-    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js`;</script>
-    <!-- mammoth.js for .docx parsing -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.18/mammoth.browser.min.js"></script>
-    <!-- jsPDF and autotable for PDF export -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        .progress-ring__circle {
-            transition: stroke-dashoffset 0.5s ease-in-out;
-            transform: rotate(-90deg);
-            transform-origin: 50% 50%;
-        }
-        .section-fade-in {
-            animation: fadeIn 0.8s ease-in-out forwards;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #1f2937; }
-        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
-        .glowing-border {
-            border: 2px solid transparent;
-            transition: border-color 0.3s, box-shadow 0.3s;
-        }
-        .glowing-border:focus-within {
-            border-color: #3b82f6;
-            box-shadow: 0 0 10px #3b82f6;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ATS TalentScan</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- pdf.js for PDF parsing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js";
+  </script>
+  <!-- mammoth.js for .docx parsing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.18/mammoth.browser.min.js"></script>
+  <!-- jsPDF and autotable for PDF export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+  <!-- Typography -->
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Space Grotesk', sans-serif;
+      background:
+        radial-gradient(1200px 800px at 20% 15%, #0b1440 0%, transparent 60%),
+        radial-gradient(1200px 800px at 80% 85%, #2a0f5d 0%, transparent 60%),
+        linear-gradient(135deg, #0a0f2c, #1a1448 50%, #3b2070);
+      background-attachment: fixed;
+      color: #e5e7eb;
+      position: relative;
+      overflow-x: hidden;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
+      background-size: 26px 26px;
+      mix-blend-mode: soft-light;
+      pointer-events: none;
+    }
+    #neural-bg {
+      position: fixed; inset: 0; width: 100%; height: 100%; z-index: -1;
+      filter: drop-shadow(0 0 6px rgba(0,255,255,0.35));
+    }
+    .neural-panel {
+      border: 1px solid rgba(0, 255, 255, 0.25);
+      background: rgba(17, 24, 39, 0.55);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 0 12px rgba(0, 255, 255, 0.15);
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .neural-panel:hover { transform: translateY(-4px); box-shadow: 0 0 20px rgba(0, 255, 255, 0.35); }
+    .glowing-border { border: 2px solid transparent; transition: border-color .3s, box-shadow .3s, transform .2s; }
+    .glowing-border:focus-within { border-color: #00f0ff; box-shadow: 0 0 14px rgba(0,240,255,0.6); transform: translateY(-1px); }
+    .button-ripple { position: relative; overflow: hidden; }
+    .button-ripple::after {
+      content: ""; position: absolute; border-radius: 50%; width: 120px; height: 120px;
+      background: rgba(255,255,255,0.25); transform: scale(0); opacity: 0; pointer-events: none;
+      left: 50%; top: 50%; translate: -50% -50%;
+    }
+    .button-ripple:active::after { transform: scale(4); opacity: 1; transition: transform .6s, opacity .9s; }
+    h1,h2,h3 { font-family: 'Space Grotesk', sans-serif; }
+    pre, code { font-family: 'JetBrains Mono', monospace; }
+    .progress-ring__circle {
+      transition: stroke-dashoffset 0.8s ease-out;
+      transform: rotate(-90deg);
+      transform-origin: 50% 50%;
+    }
+    select { appearance: none; }
+  </style>
 </head>
-<body class="bg-gray-900 text-gray-200">
-    <div class="container mx-auto p-4 md:p-8">
-        <header class="text-center mb-8">
-            <h1 class="text-4xl font-bold text-white">AI-Powered ATS Simulation</h1>
-            <p class="text-gray-400 mt-2">Compare your resume against a job description with keyword & semantic analysis.</p>
-        </header>
+<body class="text-gray-200">
+  <!-- Neural network canvas -->
+  <canvas id="neural-bg"></canvas>
 
-        <div id="main-content" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- Left Column: Inputs -->
-            <div class="bg-gray-800 p-6 rounded-2xl shadow-lg">
-                <h2 class="text-2xl font-semibold mb-4 text-white border-b border-gray-700 pb-2">Inputs</h2>
-                
-                <!-- Resume Input -->
-                <div class="mb-6">
-                    <label for="resume-input" class="block text-lg font-medium mb-2">Resume</label>
-                    <div class="glowing-border bg-gray-900 rounded-lg">
-                        <textarea id="resume-input" rows="12" class="w-full bg-transparent p-3 rounded-lg focus:outline-none resize-y" placeholder="Paste resume text here or upload a file..."></textarea>
-                    </div>
-                    <div class="mt-3 text-right">
-                        <input type="file" id="resume-upload" class="hidden" accept=".pdf,.doc,.docx,.txt" onchange="handleFileUpload(event, 'resume-input')">
-                        <button onclick="document.getElementById('resume-upload').click()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-transform transform hover:scale-105">Upload Resume</button>
-                    </div>
-                </div>
+  <div class="container mx-auto p-4 md:p-8">
+    <!-- Header -->
+    <header class="text-center mb-8">
+      <h1 class="text-5xl font-extrabold bg-gradient-to-r from-cyan-400 to-violet-500 bg-clip-text text-transparent">
+        ATS TalentScan
+      </h1>
+      <p class="text-gray-300 mt-3 text-lg italic">AI-Powered Resume Analyzer — by N. Hidalgo</p>
+      <a href="#main-content" class="button-ripple mt-4 inline-block bg-gradient-to-r from-cyan-500 to-violet-600 text-white font-semibold py-2 px-6 rounded-lg shadow hover:opacity-90 transition">
+        Try It Now
+      </a>
+    </header>
 
-                <!-- Job Description Input -->
-                <div class="mb-6">
-                    <label for="jd-input" class="block text-lg font-medium mb-2">Job Description</label>
-                    <div class="glowing-border bg-gray-900 rounded-lg">
-                        <textarea id="jd-input" rows="12" class="w-full bg-transparent p-3 rounded-lg focus:outline-none resize-y" placeholder="Paste job description here or upload a file..."></textarea>
-                    </div>
-                    <div class="mt-3 text-right">
-                        <input type="file" id="jd-upload" class="hidden" accept=".pdf,.doc,.docx,.txt" onchange="handleFileUpload(event, 'jd-input')">
-                        <button onclick="document.getElementById('jd-upload').click()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-transform transform hover:scale-105">Upload JD</button>
-                    </div>
-                </div>
-
-                <!-- Controls -->
-                <div class="flex items-center justify-between mt-6 flex-wrap gap-4">
-                     <div class="flex items-center space-x-4">
-                        <span class="text-lg font-medium">Analysis Mode:</span>
-                        <div class="flex items-center space-x-3">
-                            <label class="flex items-center cursor-pointer">
-                                <input type="radio" name="analysis-mode" value="keyword" class="form-radio h-5 w-5 text-blue-600 bg-gray-700 border-gray-600 focus:ring-blue-500" checked>
-                                <span class="ml-2 text-gray-200">Keyword</span>
-                            </label>
-                            <label class="flex items-center cursor-pointer">
-                                <input type="radio" name="analysis-mode" value="semantic" class="form-radio h-5 w-5 text-blue-600 bg-gray-700 border-gray-600 focus:ring-blue-500">
-                                <span class="ml-2 text-gray-200">Semantic</span>
-                            </label>
-                        </div>
-                    </div>
-                    <div class="flex gap-4">
-                         <button id="clear-btn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg transition-transform transform hover:scale-105">Clear All</button>
-                        <button id="scan-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-transform transform hover:scale-105 shadow-md">Analyze</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Right Column: Results -->
-            <div id="results-container" class="bg-gray-800 p-6 rounded-2xl shadow-lg hidden">
-                <!-- Placeholder for results -->
-            </div>
-            
-            <!-- Initial State Message -->
-            <div id="initial-state" class="flex items-center justify-center bg-gray-800 p-6 rounded-2xl shadow-lg">
-                 <div class="text-center text-gray-400">
-                    <svg class="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    <h3 class="text-2xl font-semibold text-white">Analysis Results Will Appear Here</h3>
-                    <p class="mt-2">Provide a resume and job description, then click "Analyze".</p>
-                </div>
-            </div>
-             <div id="loading-state" class="hidden flex items-center justify-center bg-gray-800 p-6 rounded-2xl shadow-lg">
-                <div class="text-center text-gray-300">
-                    <svg class="animate-spin h-12 w-12 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <p class="text-xl font-semibold mt-4">Analyzing...</p>
-                    <p class="text-gray-400">This may take a moment.</p>
-                </div>
-            </div>
+    <!-- Feature strip -->
+    <section class="mt-6">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="neural-panel rounded-xl p-4 text-center">
+          <div class="text-cyan-300 mb-2 text-2xl">🔍</div>
+          <h3 class="text-white font-semibold">Analysis Modes</h3>
+          <p class="text-gray-300 text-sm">Keyword and Semantic analysis, selectable per run.</p>
         </div>
-        
-        <footer class="text-center mt-8 text-gray-500">
-            <p>&copy; 2025 ATS Simulation Tool. All processing is done locally in your browser. No data is stored or transmitted.</p>
-        </footer>
+        <div class="neural-panel rounded-xl p-4 text-center">
+          <div class="text-cyan-300 mb-2 text-2xl">📊</div>
+          <h3 class="text-white font-semibold">Actionable Report</h3>
+          <p class="text-gray-300 text-sm">Overall match score, sub-scores, recommendations, strengths & gaps.</p>
+        </div>
+        <div class="neural-panel rounded-xl p-4 text-center">
+          <div class="text-cyan-300 mb-2 text-2xl">📤</div>
+          <h3 class="text-white font-semibold">Export & Share</h3>
+          <p class="text-gray-300 text-sm">Export PDF, copy raw JSON, feed into an LLM for guided resume edits.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main content -->
+    <div id="main-content" class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+      <!-- Inputs -->
+      <div class="neural-panel p-6 rounded-2xl shadow-lg">
+        <h2 class="text-2xl font-semibold mb-4 text-white border-b border-gray-700 pb-2">Inputs</h2>
+
+        <!-- Resume -->
+        <div class="mb-6">
+          <label for="resume-input" class="block text-lg font-medium mb-2">📄 Resume</label>
+          <div class="glowing-border bg-gray-900 rounded-lg">
+            <textarea id="resume-input" rows="10" class="w-full bg-transparent p-3 rounded-lg focus:outline-none resize-y" placeholder="Paste resume text here or upload a file..."></textarea>
+          </div>
+          <div class="mt-3 text-right">
+            <input type="file" id="resume-upload" class="hidden" accept=".pdf,.doc,.docx,.txt" onchange="handleFileUpload(event, 'resume-input')">
+            <button onclick="document.getElementById('resume-upload').click()" class="button-ripple bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">Upload Resume</button>
+          </div>
+        </div>
+
+        <!-- Job Description -->
+        <div class="mb-6">
+          <label for="jd-input" class="block text-lg font-medium mb-2">📑 Job Description</label>
+          <div class="glowing-border bg-gray-900 rounded-lg">
+            <textarea id="jd-input" rows="10" class="w-full bg-transparent p-3 rounded-lg focus:outline-none resize-y" placeholder="Paste job description here or upload a file..."></textarea>
+          </div>
+          <div class="mt-3 text-right">
+            <input type="file" id="jd-upload" class="hidden" accept=".pdf,.doc,.docx,.txt" onchange="handleFileUpload(event, 'jd-input')">
+            <button onclick="document.getElementById('jd-upload').click()" class="button-ripple bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">Upload JD</button>
+          </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="flex items-center justify-between mt-6 flex-wrap gap-4">
+          <div class="flex items-center space-x-4">
+            <span class="text-lg font-medium">Analysis Mode:</span>
+            <div class="flex items-center space-x-3">
+              <label class="flex items-center cursor-pointer">
+                <input type="radio" name="analysis-mode" value="keyword" class="form-radio h-5 w-5 text-blue-600 bg-gray-700 border-gray-600 focus:ring-blue-500" checked>
+                <span class="ml-2 text-gray-200">Keyword</span>
+              </label>
+              <label class="flex items-center cursor-pointer">
+                <input type="radio" name="analysis-mode" value="semantic" class="form-radio h-5 w-5 text-blue-600 bg-gray-700 border-gray-600 focus:ring-blue-500">
+                <span class="ml-2 text-gray-200">Semantic</span>
+              </label>
+            </div>
+          </div>
+          <div class="flex gap-4">
+            <button id="clear-btn" class="button-ripple bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg">Clear All</button>
+            <button id="scan-btn" class="button-ripple bg-gradient-to-r from-green-500 to-green-700 text-white font-bold py-3 px-6 rounded-lg shadow-md">Analyze</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div id="results-container" class="neural-panel p-6 rounded-2xl shadow-lg hidden"></div>
+
+      <!-- Initial state -->
+      <div id="initial-state" class="neural-panel p-6 rounded-2xl shadow-lg">
+        <div class="text-center text-gray-300">
+          <svg class="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 .293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          <h3 class="text-2xl font-semibold text-white">Analysis Results Will Appear Here</h3>
+          <p class="mt-2">Provide a resume and job description, then click “Analyze”.</p>
+        </div>
+      </div>
+
+      <!-- Loading state -->
+      <div id="loading-state" class="hidden neural-panel p-6 rounded-2xl shadow-lg">
+        <div class="text-center text-gray-300">
+          <svg class="animate-spin h-12 w-12 text-cyan-400 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p class="text-xl font-semibold mt-4">Analyzing...</p>
+          <p class="text-gray-400">This may take a moment.</p>
+        </div>
+      </div>
     </div>
 
-<script>
-// --- CORE LOGIC & STATE MANAGEMENT ---
+    <!-- Footer -->
+    <footer class="neural-panel mt-12 p-8 rounded-2xl text-center">
+      <h3 class="text-2xl font-bold text-white mb-2">Ready to Analyze?</h3>
+      <p class="text-gray-300 mb-6">
+        Upload your resume and job description, then click
+        <span class="font-semibold text-cyan-300">Analyze</span>
+        to get your compatibility report.
+      </p>
+      <p class="text-sm text-gray-400">© 2024 <span class="font-semibold">ATS TalentScan</span> • Built by Nicholas Hidalgo</p>
+    </footer>
+  </div>
 
-const scanBtn = document.getElementById('scan-btn');
-const clearBtn = document.getElementById('clear-btn');
-const resultsContainer = document.getElementById('results-container');
-const initialState = document.getElementById('initial-state');
-const loadingState = document.getElementById('loading-state');
-const resumeInput = document.getElementById('resume-input');
-const jdInput = document.getElementById('jd-input');
+  <!-- Logic -->
+  <script>
+    const scanBtn = document.getElementById('scan-btn');
+    const clearBtn = document.getElementById('clear-btn');
+    const resultsContainer = document.getElementById('results-container');
+    const initialState = document.getElementById('initial-state');
+    const loadingState = document.getElementById('loading-state');
+    const resumeInput = document.getElementById('resume-input');
+    const jdInput = document.getElementById('jd-input');
 
-scanBtn.addEventListener('click', async () => {
-  const resumeText = resumeInput.value;
-  const jdText = jdInput.value;
-  const mode = document.querySelector('input[name="analysis-mode"]:checked').value;
+    // --- STOP WORDS (used by local keyword & semantic)
+    const STOP_WORDS = new Set([
+      'a','an','and','are','as','at','be','by','for','from','has','he','in','is','it','its','of','on','that','the','to','was','were',
+      'will','with','i','me','my','myself','we','our','ours','ourselves','you','your','yours','yourself','yourselves','him','his',
+      'himself','she','her','hers','herself','it','itself','they','them','their','theirs','themselves','what','which','who','whom',
+      'this','these','those','am','been','being','have','has','had','having','do','does','did','doing','but','if','or','because','as',
+      'until','while','about','against','between','into','through','during','before','after','above','below','up','down','out','off',
+      'over','under','again','further','then','once','here','there','when','where','why','how','all','any','both','each','few','more',
+      'most','other','some','such','no','nor','not','only','own','same','so','than','too','very','s','t','can','just','don','should','now',
+      'experience','required','responsibilities','preferred','qualifications','skills','education'
+    ]);
 
-  if (!resumeText.trim() || !jdText.trim()) {
-    alert('Please provide both a resume and a job description.');
-    return;
-  }
+    // --- Local semantic + keyword helpers (no UI impact) ---
+    const TAXONOMY = {
+      'Cloud Platforms': ['aws','azure','gcp','google cloud','amazon web services','heroku','digitalocean'],
+      'Programming Languages': ['python','javascript','java','c#','c++','ruby','go','typescript','sql','php'],
+      'Data & Analytics': ['etl','data pipeline','data warehousing','business intelligence','machine learning','ai','tensorflow','pytorch','scikit-learn','pandas','numpy','databricks','snowflake','tableau','power bi'],
+      'DevOps & Tools': ['docker','kubernetes','jenkins','git','ci/cd','terraform','ansible'],
+      'Project Management': ['agile','scrum','pmp','jira','confluence','lean','kanban'],
+      'Web Technologies': ['react','angular','vue','node.js','django','flask','html','css']
+    };
 
-  initialState.classList.add('hidden');
-  resultsContainer.classList.add('hidden');
-  loadingState.classList.remove('hidden');
+    const KW_STOP = new Set([...STOP_WORDS,'role','roles','position','responsibility','responsibilities','requirement','requirements']);
 
-  try {
-    // Call Python backend API
-    const API_URL = 'https://ats-backend-production-c5db.up.railway.app/api/score';
-    
-    const response = await fetch(API_URL, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        jd_text: jdText,
-        resume_text: resumeText,
-        options: {
-          language: 'python',
-          use_embeddings: mode === 'semantic',
-          calibration: {a: 1.0, b: 0.0}
+
+    // --- Local Keyword Analysis ---
+        heatmap.push({ jd_requirement: req, resume_section: best.section, confidence: best.confidence, evidence: best.evidence });
+
+        sums[bucket] += best.confidence;
+        counts[bucket] += 1;
+      });
+
+      const normalize = (sum, count) => count > 0 ? Math.round(Math.min(100, (sum / count) * 100)) : 0;
+
+      const coreSkillsMatch       = normalize(sums.core_skills_match,        counts.core_skills_match);
+      const responsibilitiesAlign = normalize(sums.responsibilities_alignment,counts.responsibilities_alignment);
+      const toolsTechStack        = normalize(sums.tools_tech_stack,         counts.tools_tech_stack);
+      const certsEducation        = normalize(sums.certifications_education, counts.certifications_education);
+
+      const weights = { core_skills_match: 0.25, responsibilities_alignment: 0.25, tools_tech_stack: 0.20, certifications_education: 0.05 };
+      const overallPct = Math.round(
+        coreSkillsMatch * weights.core_skills_match +
+        responsibilitiesAlign * weights.responsibilities_alignment +
+        toolsTechStack * weights.tools_tech_stack +
+        certsEducation * weights.certifications_education
+      );
+
+
+      const strengths = heatmap.filter(h => h.confidence >= 0.70).slice(0, 3)
+        .map(h => `Strong alignment: "${h.jd_requirement}" (evidence: “…${h.evidence}…")`);
+
+      const gaps = heatmap.filter(h => h.confidence < 0.40).slice(0, 3)
+        .map(h => `Potential gap: "${h.jd_requirement}"`);
+
+      const recommendations = [];
+      if (gaps.length) {
+        recommendations.push({ priority: 'high', suggestion: `Add concrete bullets mapping to ${gaps.length} low-confidence JD items. Mirror the JD phrasing where truthful and cite outcomes.` });
+      }
+      if (toolsTechStack < 75) {
+        recommendations.push({ priority: 'medium', suggestion: 'Elevate key tools to the Skills section and repeat them in relevant Experience bullets (scope + impact).' });
+      }
+      recommendations.push({ priority: 'low', suggestion: 'Ensure each major JD responsibility has at least one matching resume bullet with measurable results.' });
+
+      return {
+        overall_score: { percentage: Math.min(100, Math.max(0, overallPct)), mode, thresholds: { excellent: "85-100", strong: "70-84", moderate: "50-69", weak: "0-49" } },
+        sub_scores: {
+          core_skills_match: coreSkillsMatch,
+          responsibilities_alignment: responsibilitiesAlign,
+          tools_tech_stack: toolsTechStack,
+          certifications_education: certsEducation,
+          ats_compliance_readability: compliance.score
+        },
+        recommendations, strengths, gaps,
+        heatmap: heatmap.sort((a,b) => b.confidence - a.confidence),
+        compliance_flags: compliance.flags
+      };
+    }
+
+    // --- Local Semantic Analysis ---
+      const sums   = { core_skills_match: 0, responsibilities_alignment: 0, tools_tech_stack: 0, certifications_education: 0 };
+      const counts = { core_skills_match: 0, responsibilities_alignment: 0, tools_tech_stack: 0, certifications_education: 0 };
+      const heatmap = [];
+
+      jdRequirements.forEach(req => {
+        let best = { confidence: 0, section: 'N/A', evidence: 'Not found' };
+        for (const sectionName in resumeSections) {
+          const result = findMatchUpgraded(req, resumeSections[sectionName], 'semantic');
+          if (result.confidence > best.confidence) {
+            best = { confidence: result.confidence, section: sectionName, evidence: result.evidence };
+          }
         }
-      })
+
+        heatmap.push({ jd_requirement: req, resume_section: best.section, confidence: best.confidence, evidence: best.evidence });
+
+        sums[bucket] += best.confidence;
+        counts[bucket] += 1;
+      });
+
+      const normalize = (sum, count) => count > 0 ? Math.round(Math.min(100, (sum / count) * 100)) : 0;
+
+      const coreSkillsMatch       = normalize(sums.core_skills_match,        counts.core_skills_match);
+      const responsibilitiesAlign = normalize(sums.responsibilities_alignment,counts.responsibilities_alignment);
+      const toolsTechStack        = normalize(sums.tools_tech_stack,         counts.tools_tech_stack);
+      const certsEducation        = normalize(sums.certifications_education, counts.certifications_education);
+
+      // Slightly different weights for semantic mode to emphasize concepts/tools
+      const weights = { core_skills_match: 0.30, responsibilities_alignment: 0.20, tools_tech_stack: 0.30, certifications_education: 0.05 };
+      const overallPct = Math.round(
+        coreSkillsMatch * weights.core_skills_match +
+        responsibilitiesAlign * weights.responsibilities_alignment +
+        toolsTechStack * weights.tools_tech_stack +
+        certsEducation * weights.certifications_education
+      );
+
+
+      const strengths = heatmap.filter(h => h.confidence >= 0.70).slice(0, 4)
+        .map(h => `Semantic alignment: "${h.jd_requirement}" (evidence: “…${h.evidence}…")`);
+
+      const gaps = heatmap.filter(h => h.confidence < 0.40).slice(0, 4)
+        .map(h => `Weak semantic coverage: "${h.jd_requirement}"`);
+
+      const recommendations = [
+        ...(gaps.length ? [{ priority: 'high', suggestion: `Add bullets that explicitly name related tools/skills for the low-confidence items (${gaps.length}).` }] : []),
+        ...(toolsTechStack < 75 ? [{ priority: 'medium', suggestion: 'Surface platform/tool names in both Skills and Experience bullets for dual parsing.' }] : []),
+        { priority: 'low', suggestion: 'Mirror JD phrasing where truthful—especially bigrams like “own roadmap”, “design scalable”, “optimize cost”.' }
+      ];
+
+      return {
+        overall_score: { percentage: Math.min(100, Math.max(0, overallPct)), mode, thresholds: { excellent: "85-100", strong: "70-84", moderate: "50-69", weak: "0-49" } },
+        sub_scores: {
+          core_skills_match: coreSkillsMatch,
+          responsibilities_alignment: responsibilitiesAlign,
+          tools_tech_stack: toolsTechStack,
+          certifications_education: certsEducation,
+          ats_compliance_readability: compliance.score
+        },
+        recommendations, strengths, gaps,
+        heatmap: heatmap.sort((a,b) => b.confidence - a.confidence),
+        compliance_flags: compliance.flags
+      };
+    }
+
+    // --- Event handlers ---
+    
+      initialState.classList.add('hidden');
+      resultsContainer.classList.add('hidden');
+      loadingState.classList.remove('hidden');
+
+      try {
+  const API_URL = 'https://ats-backend-production-c5db.up.railway.app/api/score';
+  
+  const response = await fetch(API_URL, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      jd_text: jdText,
+      resume_text: resumeText,
+      options: {
+        language: 'python',
+        use_embeddings: mode === 'semantic',
+        calibration: {a: 1.0, b: 0.0}
+      }
+    })
+  });
+
+  if (!response.ok) throw new Error(`API error: ${response.status}`);
+
+  const apiResult = await response.json();
+
+  const data = {
+    overall_score: {percentage: Math.round(apiResult.overall_score), mode},
+    sub_scores: {
+      core_skills_match: Math.round(apiResult.section_scores.required_skills.score * 100 / 28),
+      responsibilities_alignment: Math.round(apiResult.section_scores.seniority_alignment.score * 100 / 12),
+      tools_tech_stack: Math.round(apiResult.section_scores.tooling_stack.score * 100 / 10),
+      certifications_education: Math.round(apiResult.section_scores.education_cert_legal.score * 100 / 8),
+      ats_compliance_readability: Math.round(apiResult.section_scores.ats_parse_quality.score * 100 / 5)
+    },
+    recommendations: apiResult.resume_upgrade_actions.map(a => ({priority: a.impact, suggestion: a.action})),
+    strengths: apiResult.requirement_mapping.filter(r => r.matched && r.confidence >= 0.7).slice(0, 4)
+      .map(r => `Strong: "${r.item.substring(0, 50)}..." (${Math.round(r.confidence*100)}%)`),
+    gaps: apiResult.missing_must_haves.slice(0, 4).map(item => `Missing: "${item.substring(0, 50)}..."`),
+    heatmap: apiResult.requirement_mapping.map(r => ({
+      jd_requirement: r.item,
+      resume_section: r.matched ? 'Matched' : 'Not found',
+      confidence: r.confidence,
+      evidence: r.evidence[0] || 'No evidence'
+    })),
+    metadata: {analysis_mode: mode, analysis_timestamp: new Date().toISOString()},
+    compliance_flags: apiResult.debug.parse_warnings.map(w => ({issue: w, impact: 'Parse issue', recommendation: 'Fix formatting'}))
+  };
+  // ...
+
+        renderResults(data);
+        resultsContainer.classList.remove('hidden');
+        resultsContainer.scrollIntoView({ behavior: 'smooth' });
+      } catch (err) {
+        console.error("Analysis Failed:", err);
+        alert(`Analysis Error: ${err.message}`);
+        initialState.classList.remove('hidden');
+        resultsContainer.classList.add('hidden');
+      } finally {
+        loadingState.classList.add('hidden');
+      }
     });
 
-    if (!response.ok) throw new Error(`API error: ${response.status}`);
+    clearBtn.addEventListener('click', () => {
+      resumeInput.value = '';
+      jdInput.value = '';
+      document.getElementById('resume-upload').value = '';
+      document.getElementById('jd-upload').value = '';
+      resultsContainer.innerHTML = '';
+      resultsContainer.classList.add('hidden');
+      initialState.classList.remove('hidden');
+      loadingState.classList.add('hidden');
+    });
 
-    const apiResult = await response.json();
+    // --- File handling ---
+    async function handleFileUpload(event, targetTextareaId) {
+      const file = event.target.files[0];
+      if (!file) return;
 
-    // Map API response to existing UI format
-    const data = {
-      overall_score: {percentage: Math.round(apiResult.overall_score), mode},
-      sub_scores: {
-        core_skills_match: Math.round(apiResult.section_scores.required_skills.score * 100 / 28),
-        responsibilities_alignment: Math.round(apiResult.section_scores.seniority_alignment.score * 100 / 12),
-        tools_tech_stack: Math.round(apiResult.section_scores.tooling_stack.score * 100 / 10),
-        certifications_education: Math.round(apiResult.section_scores.education_cert_legal.score * 100 / 8),
-        ats_compliance_readability: Math.round(apiResult.section_scores.ats_parse_quality.score * 100 / 5)
-      },
-      recommendations: apiResult.resume_upgrade_actions.map(a => ({priority: a.impact, suggestion: a.action})),
-      strengths: apiResult.requirement_mapping.filter(r => r.matched && r.confidence >= 0.7).slice(0, 4)
-        .map(r => `Strong: "${r.item.substring(0, 50)}..." (${Math.round(r.confidence*100)}%)`),
-      gaps: apiResult.missing_must_haves.slice(0, 4).map(item => `Missing: "${item.substring(0, 50)}..."`),
-      heatmap: apiResult.requirement_mapping.map(r => ({
-        jd_requirement: r.item,
-        resume_section: r.matched ? 'Matched' : 'Not found',
-        confidence: r.confidence,
-        evidence: r.evidence[0] || 'No evidence'
-      })),
-      metadata: {analysis_mode: mode, analysis_timestamp: new Date().toISOString()},
-      compliance_flags: apiResult.debug.parse_warnings.map(w => ({issue: w, impact: 'Parse issue', recommendation: 'Fix formatting'}))
-    };
+      const textarea = document.getElementById(targetTextareaId);
+      const reader = new FileReader();
 
-    renderResults(data);
-    resultsContainer.classList.remove('hidden');
-    resultsContainer.scrollIntoView({behavior: 'smooth'});
-  } catch (err) {
-    console.error("Analysis Failed:", err);
-    alert(`Error: ${err.message}\n\nPlease check:\n1. Backend API is running\n2. Network connection is stable`);
-    initialState.classList.remove('hidden');
-  } finally {
-    loadingState.classList.add('hidden');
-  }
-});
-
-    if (!response.ok) throw new Error(`API error: ${response.status}`);
-
-    const apiResult = await response.json();
-
-    // Map API response to existing UI format
-    const data = {
-      overall_score: {percentage: Math.round(apiResult.overall_score), mode},
-      sub_scores: {
-        core_skills_match: Math.round(apiResult.section_scores.required_skills.score * 100 / 28),
-        responsibilities_alignment: Math.round(apiResult.section_scores.seniority_alignment.score * 100 / 12),
-        tools_tech_stack: Math.round(apiResult.section_scores.tooling_stack.score * 100 / 10),
-        certifications_education: Math.round(apiResult.section_scores.education_cert_legal.score * 100 / 8),
-        ats_compliance_readability: Math.round(apiResult.section_scores.ats_parse_quality.score * 100 / 5)
-      },
-      recommendations: apiResult.resume_upgrade_actions.map(a => ({priority: a.impact, suggestion: a.action})),
-      strengths: apiResult.requirement_mapping.filter(r => r.matched && r.confidence >= 0.7).slice(0, 4)
-        .map(r => `Strong: "${r.item.substring(0, 50)}..." (${Math.round(r.confidence*100)}%)`),
-      gaps: apiResult.missing_must_haves.slice(0, 4).map(item => `Missing: "${item.substring(0, 50)}..."`),
-      heatmap: apiResult.requirement_mapping.map(r => ({
-        jd_requirement: r.item,
-        resume_section: r.matched ? 'Matched' : 'Not found',
-        confidence: r.confidence,
-        evidence: r.evidence[0] || 'No evidence'
-      })),
-      metadata: {analysis_mode: mode, analysis_timestamp: new Date().toISOString()},
-      compliance_flags: apiResult.debug.parse_warnings.map(w => ({issue: w, impact: 'Parse issue', recommendation: 'Fix formatting'}))
-    };
-
-    renderResults(data);
-    resultsContainer.classList.remove('hidden');
-    resultsContainer.scrollIntoView({behavior: 'smooth'});
-  } catch (err) {
-    console.error("Analysis Failed:", err);
-    alert(`Error: ${err.message}\n\nPlease check:\n1. Backend API is running\n2. Network connection is stable`);
-    initialState.classList.remove('hidden');
-  } finally {
-    loadingState.classList.add('hidden');
-  }
-});
-
-clearBtn.addEventListener('click', () => {
-    resumeInput.value = '';
-    jdInput.value = ''; 
-    document.getElementById('resume-upload').value = '';
-    document.getElementById('jd-upload').value = '';
-    resultsContainer.innerHTML = '';
-    resultsContainer.classList.add('hidden');
-    initialState.classList.remove('hidden');
-    loadingState.classList.add('hidden');
-});
-
-
-// --- FILE HANDLING ---
-
-async function handleFileUpload(event, targetTextareaId) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const textarea = document.getElementById(targetTextareaId);
-    const reader = new FileReader();
-
-    if (file.type === "application/pdf") {
+      if (file.type === "application/pdf") {
         reader.onload = async (e) => {
+          try {
             const pdfData = new Uint8Array(e.target.result);
             const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
             let textContent = '';
             for (let i = 1; i <= pdf.numPages; i++) {
-                const page = await pdf.getPage(i);
-                const text = await page.getTextContent();
-                textContent += text.items.map(item => item.str).join(' ') + '\n';
+              const page = await pdf.getPage(i);
+              const text = await page.getTextContent();
+              textContent += text.items.map(item => item.str).join(' ') + '\n';
             }
             textarea.value = textContent;
+          } catch (err) {
+            console.error("Error parsing PDF file:", err);
+            alert("Could not read the PDF file. It may be corrupted or encrypted.");
+            textarea.value = '';
+          }
         };
         reader.readAsArrayBuffer(file);
-    } else if (file.name.endsWith('.docx') || file.name.endsWith('.doc')) {
+      } else if (file.name.endsWith('.docx') || file.name.endsWith('.doc')) {
         reader.onload = (e) => {
-            mammoth.extractRawText({ arrayBuffer: e.target.result })
-                .then(result => {
-                    textarea.value = result.value;
-                })
-                .catch(err => {
-                    console.error("Error parsing .docx file:", err);
-                    alert("Could not read the .docx file.");
-                    textarea.value = '';
-                });
+          mammoth.extractRawText({ arrayBuffer: e.target.result })
+            .then(result => { textarea.value = result.value; })
+            .catch(err => {
+              console.error("Error parsing .docx file:", err);
+              alert("Could not read the .docx file.");
+              textarea.value = '';
+            });
         };
         reader.readAsArrayBuffer(file);
-    } else { // Plain text
-        reader.onload = (e) => {
-            textarea.value = e.target.result;
-        };
+      } else if (file.type === "text/plain") {
+        reader.onload = (e) => { textarea.value = e.target.result; };
         reader.readAsText(file);
+      } else {
+        alert("Unsupported file type. Please upload .pdf, .docx, .doc, or .txt");
+        event.target.value = '';
+      }
     }
-}
 
-// --- UI RENDERING ---
-
-function renderResults(data) {
-    const getScoreColor = (score) => {
+    // --- UI rendering ---
+    function renderResults(data) {
+      const getScoreColor = (score) => {
         if (score >= 85) return 'text-green-400';
         if (score >= 70) return 'text-yellow-400';
         if (score >= 50) return 'text-orange-400';
         return 'text-red-400';
-    };
-
-    const getScoreRingColor = (score) => {
+      };
+      const getScoreRingColor = (score) => {
         if (score >= 85) return 'stroke-green-500';
         if (score >= 70) return 'stroke-yellow-500';
         if (score >= 50) return 'stroke-orange-500';
         return 'stroke-red-500';
-    };
-    
-    const getScoreBgColor = (score) => {
+      };
+      const getScoreBgColor = (score) => {
         if (score >= 85) return 'bg-green-500';
         if (score >= 70) return 'bg-yellow-500';
         if (score >= 50) return 'bg-orange-500';
         return 'bg-red-500';
-    };
-
-    const getScoreCategoryText = (score) => {
+      };
+      const getScoreCategoryText = (score) => {
         if (score >= 85) return 'Excellent';
         if (score >= 70) return 'Strong';
         if (score >= 50) return 'Moderate';
         return 'Weak';
-    }
-    
-    const radius = 60;
-    const circumference = 2 * Math.PI * radius;
-    const offset = circumference - (data.overall_score.percentage / 100) * circumference;
+      }
 
-    const resultsHTML = `
+      const radius = 60;
+      const circumference = 2 * Math.PI * radius;
+      const percentage = Math.min(100, Math.max(0, Number(data.overall_score.percentage) || 0));
+      const offset = circumference - (percentage / 100) * circumference;
+
+      const resultsHTML = `
         <div class="flex justify-between items-center mb-6 border-b border-gray-700 pb-4">
-            <h2 class="text-3xl font-bold text-white">Analysis Report</h2>
-            <div>
-                 <button id="export-pdf-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition-transform transform hover:scale-105">Export PDF</button>
-            </div>
+          <h2 class="text-3xl font-bold text-white">Analysis Report</h2>
+          <div><button id="export-pdf-btn" class="button-ripple bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg">Export PDF</button></div>
         </div>
 
-        <!-- Overall Score -->
-        <div class="section-fade-in bg-gray-900/50 p-6 rounded-xl mb-6 text-center">
-            <h3 class="text-xl font-semibold mb-4 text-white">Overall Match Score</h3>
-            <div class="relative inline-block">
-                <svg class="w-40 h-40">
-                    <circle class="text-gray-700" stroke-width="12" stroke="currentColor" fill="transparent" r="${radius}" cx="80" cy="80"/>
-                    <circle class="progress-ring__circle ${getScoreRingColor(data.overall_score.percentage)}"
-                        stroke-width="12"
-                        stroke-linecap="round"
-                        stroke-dasharray="${circumference} ${circumference}"
-                        style="stroke-dashoffset: ${circumference}"
-                        data-offset="${offset}"
-                        fill="transparent"
-                        r="${radius}" cx="80" cy="80"/>
-                </svg>
-                <span class="absolute text-4xl font-bold top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ${getScoreColor(data.overall_score.percentage)}">${data.overall_score.percentage}%</span>
-            </div>
-            <p class="mt-3 text-2xl font-semibold ${getScoreColor(data.overall_score.percentage)}">${getScoreCategoryText(data.overall_score.percentage)} Match</p>
-            <p class="text-gray-400 text-sm">Mode: ${data.metadata.analysis_mode}</p>
+        <div class="neural-panel p-6 rounded-xl mb-6 text-center">
+          <h3 class="text-xl font-semibold mb-4 text-white">Overall Match Score</h3>
+          <div class="relative inline-block">
+            <svg class="w-40 h-40 transform -rotate-90">
+              <circle class="text-gray-700" stroke-width="12" stroke="currentColor" fill="transparent" r="${radius}" cx="80" cy="80"/>
+              <circle class="progress-ring__circle ${getScoreRingColor(percentage)}"
+                stroke-width="12" stroke-linecap="round"
+                stroke-dasharray="${circumference} ${circumference}"
+                style="stroke-dashoffset: ${circumference}"
+                data-offset="${offset}"
+                fill="transparent" r="${radius}" cx="80" cy="80"/>
+            </svg>
+            <span class="absolute text-4xl font-bold top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ${getScoreColor(percentage)}">${percentage}%</span>
+          </div>
+          <p class="mt-3 text-2xl font-semibold ${getScoreColor(percentage)}">${getScoreCategoryText(percentage)} Match</p>
+          <p class="text-gray-400 text-sm">Mode: ${data.metadata.analysis_mode}</p>
         </div>
 
-        <!-- Sub Scores -->
-        <div class="section-fade-in bg-gray-900/50 p-6 rounded-xl mb-6" style="animation-delay: 0.1s;">
-            <h3 class="text-xl font-semibold mb-4 text-white">Sub-Score Breakdown</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                ${Object.entries(data.sub_scores).map(([key, value]) => `
-                    <div>
-                        <div class="flex justify-between mb-1">
-                            <span class="text-base font-medium text-gray-300">${key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
-                            <span class="text-sm font-medium ${getScoreColor(value)}">${value}%</span>
-                        </div>
-                        <div class="w-full bg-gray-700 rounded-full h-2.5">
-                            <div class="${getScoreBgColor(value)} h-2.5 rounded-full" style="width: ${value}%"></div>
-                        </div>
-                    </div>
+        <div class="neural-panel p-6 rounded-xl mb-6">
+          <h3 class="text-xl font-semibold mb-4 text-white">Sub-Score Breakdown</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            ${Object.entries(data.sub_scores || {}).map(([key, value]) => `
+              <div>
+                <div class="flex justify-between mb-1">
+                  <span class="text-base font-medium text-gray-300">${key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
+                  <span class="text-sm font-medium ${getScoreColor(value)}">${value}%</span>
+                </div>
+                <div class="w-full bg-gray-700 rounded-full h-2.5">
+                  <div class="${getScoreBgColor(value)} h-2.5 rounded-full" style="width: ${value}%; transition: width .5s ease-out .2s;"></div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div class="neural-panel p-6 rounded-xl">
+            <h3 class="text-xl font-semibold mb-4 text-white">Strengths</h3>
+            <ul class="list-disc list-inside space-y-2 text-green-300">
+              ${(data.strengths || []).map(s => `<li>${s}</li>`).join('')}
+            </ul>
+          </div>
+          <div class="neural-panel p-6 rounded-xl">
+            <h3 class="text-xl font-semibold mb-4 text-white">Potential Gaps</h3>
+            <ul class="list-disc list-inside space-y-2 text-red-300">
+              ${(data.gaps || []).map(g => `<li>${g}</li>`).join('')}
+            </ul>
+          </div>
+        </div>
+
+        <div class="neural-panel p-6 rounded-xl mb-6">
+          <h3 class="text-xl font-semibold mb-4 text-white">Detailed Alignment Heatmap</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left text-gray-300">
+              <thead class="text-xs text-gray-300 uppercase bg-gray-700/60">
+                <tr>
+                  <th class="px-4 py-3">JD Requirement</th>
+                  <th class="px-4 py-3">Resume Section</th>
+                  <th class="px-4 py-3">Confidence</th>
+                  <th class="px-4 py-3">Evidence from Resume</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${(data.heatmap || []).slice(0, 10).map(item => `
+                  <tr class="border-b border-gray-700/60">
+                    <td class="px-4 py-3 font-medium">${item.jd_requirement}</td>
+                    <td class="px-4 py-3">${item.resume_section}</td>
+                    <td class="px-4 py-3 ${getScoreColor((item.confidence || 0) * 100)} font-bold">${Math.round((item.confidence || 0) * 100)}%</td>
+                    <td class="px-4 py-3 text-gray-400 italic">"${item.evidence}"</td>
+                  </tr>
                 `).join('')}
-            </div>
-        </div>
-        
-        <!-- Recommendations -->
-         <div class="section-fade-in bg-gray-900/50 p-6 rounded-xl mb-6" style="animation-delay: 0.2s;">
-            <h3 class="text-xl font-semibold mb-4 text-white">Key Recommendations</h3>
-             <ul class="space-y-3">
-             ${data.recommendations.map(rec => `
-                <li class="flex items-start">
-                    <span class="mr-3 mt-1 inline-block h-5 w-5 rounded-full ${rec.priority === 'high' ? 'bg-red-500' : rec.priority === 'medium' ? 'bg-yellow-500' : 'bg-green-500'} flex-shrink-0"></span>
-                    <span><span class="font-bold capitalize">${rec.priority}:</span> ${rec.suggestion}</span>
-                </li>
-             `).join('')}
-             </ul>
-        </div>
-        
-        <!-- Strengths & Gaps -->
-        <div class="section-fade-in grid grid-cols-1 md:grid-cols-2 gap-6 mb-6" style="animation-delay: 0.3s;">
-            <div class="bg-gray-900/50 p-6 rounded-xl">
-                <h3 class="text-xl font-semibold mb-4 text-white">Strengths</h3>
-                <ul class="list-disc list-inside space-y-2 text-green-300">
-                    ${data.strengths.map(s => `<li>${s}</li>`).join('')}
-                </ul>
-            </div>
-            <div class="bg-gray-900/50 p-6 rounded-xl">
-                <h3 class="text-xl font-semibold mb-4 text-white">Potential Gaps</h3>
-                 <ul class="list-disc list-inside space-y-2 text-red-300">
-                    ${data.gaps.map(g => `<li>${g}</li>`).join('')}
-                </ul>
-            </div>
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        <!-- Heatmap -->
-        <div class="section-fade-in bg-gray-900/50 p-6 rounded-xl mb-6" style="animation-delay: 0.4s;">
-            <h3 class="text-xl font-semibold mb-4 text-white">Detailed Alignment Heatmap</h3>
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm text-left text-gray-300">
-                    <thead class="text-xs text-gray-300 uppercase bg-gray-700">
-                        <tr>
-                            <th scope="col" class="px-4 py-3">JD Requirement</th>
-                            <th scope="col" class="px-4 py-3">Resume Section</th>
-                            <th scope="col" class="px-4 py-3">Confidence</th>
-                            <th scope="col" class="px-4 py-3">Evidence from Resume</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${data.heatmap.slice(0, 10).map(item => `
-                            <tr class="border-b border-gray-700">
-                                <td class="px-4 py-3 font-medium">${item.jd_requirement}</td>
-                                <td class="px-4 py-3">${item.resume_section}</td>
-                                <td class="px-4 py-3 ${getScoreColor(item.confidence * 100)} font-bold">${Math.round(item.confidence * 100)}%</td>
-                                <td class="px-4 py-3 text-gray-400 italic">"${item.evidence}"</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- ATS Compliance -->
-        ${data.compliance_flags.length > 0 ? `
-        <div class="section-fade-in bg-gray-900/50 p-6 rounded-xl mb-6" style="animation-delay: 0.5s;">
+        ${(data.compliance_flags || []).length > 0 ? `
+          <div class="neural-panel p-6 rounded-xl mb-6">
             <h3 class="text-xl font-semibold mb-4 text-white">ATS Compliance Flags</h3>
             <ul class="space-y-3">
-                 ${data.compliance_flags.map(flag => `
-                    <li class="bg-yellow-900/30 p-3 rounded-lg">
-                        <p class="font-semibold text-yellow-300">${flag.issue}</p>
-                        <p class="text-sm text-gray-300"><span class="font-medium">Impact:</span> ${flag.impact}</p>
-                        <p class="text-sm text-gray-300"><span class="font-medium">Recommendation:</span> ${flag.recommendation}</p>
-                    </li>
-                 `).join('')}
+              ${data.compliance_flags.map(flag => `
+                <li class="bg-yellow-900/30 p-3 rounded-lg">
+                  <p class="font-semibold text-yellow-300">${flag.issue}</p>
+                  <p class="text-sm text-gray-300"><span class="font-medium">Impact:</span> ${flag.impact}</p>
+                  <p class="text-sm text-gray-300"><span class="font-medium">Recommendation:</span> ${flag.recommendation}</p>
+                </li>
+              `).join('')}
             </ul>
-        </div>
+          </div>
         ` : ''}
 
-        <!-- JSON Output -->
-        <div class="section-fade-in" style="animation-delay: 0.6s;">
-            <details class="bg-gray-900/50 rounded-xl">
-                <summary class="cursor-pointer text-lg font-semibold p-4 text-white">View Raw JSON Output</summary>
-                <div class="p-4 border-t border-gray-700">
-                    <pre class="bg-gray-900 text-sm text-green-300 p-4 rounded-lg overflow-x-auto whitespace-pre-wrap" id="json-output">${JSON.stringify(data, null, 2)}</pre>
-                    <button id="copy-json-btn" class="mt-4 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">Copy JSON</button>
-                </div>
-            </details>
+        <div class="neural-panel p-6 rounded-xl">
+          <details>
+            <summary class="cursor-pointer text-lg font-semibold text-white">View Raw JSON Output</summary>
+            <div class="pt-4 border-t border-gray-700/60">
+              <pre class="bg-gray-900/70 text-sm text-green-300 p-4 rounded-lg overflow-x-auto whitespace-pre-wrap" id="json-output">${JSON.stringify(data, null, 2)}</pre>
+              <button id="copy-json-btn" class="button-ripple mt-4 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">Copy JSON</button>
+            </div>
+          </details>
         </div>
-    `;
+      `;
 
-    resultsContainer.innerHTML = resultsHTML;
+      resultsContainer.innerHTML = resultsHTML;
 
-    // Trigger progress ring animation
-    const circle = document.querySelector('.progress-ring__circle');
-    const targetOffset = circle.dataset.offset;
-    setTimeout(() => {
-       circle.style.strokeDashoffset = targetOffset;
-    }, 100);
+      const circle = document.querySelector('.progress-ring__circle');
+      if (circle) {
+        const targetOffset = circle.dataset.offset;
+        setTimeout(() => { circle.style.strokeDashoffset = targetOffset; }, 100);
+      }
 
-    // Add event listeners for new buttons
-    document.getElementById('copy-json-btn').addEventListener('click', () => {
-        navigator.clipboard.writeText(JSON.stringify(data, null, 2));
-        alert('JSON copied to clipboard!');
-    });
-    document.getElementById('export-pdf-btn').addEventListener('click', () => {
-        exportReportAsPDF(data);
-    });
-}
+      const copyBtn = document.getElementById('copy-json-btn');
+      if (copyBtn) {
+        copyBtn.addEventListener('click', () => {
+          const jsonText = document.getElementById('json-output').textContent;
+          try {
+            const textArea = document.createElement("textarea");
+            textArea.value = jsonText;
+            textArea.style.position = "fixed"; textArea.style.top = "0"; textArea.style.left = "0";
+            textArea.style.width = '2em'; textArea.style.height = '2em';
+            textArea.style.padding = '0'; textArea.style.border = 'none'; textArea.style.outline = 'none';
+            textArea.style.boxShadow = 'none'; textArea.style.background = 'transparent';
+            document.body.appendChild(textArea);
+            textArea.focus(); textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            alert('JSON copied to clipboard!');
+          } catch (err) {
+            console.error('Fallback copy failed: ', err);
+            alert('Could not copy JSON.');
+          }
+        });
+      }
 
-function exportReportAsPDF(data) {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
+      const exportBtn = document.getElementById('export-pdf-btn');
+      if (exportBtn) exportBtn.addEventListener('click', () => exportReportAsPDF(data));
+    }
 
-    // Title
-    doc.setFontSize(22);
-    doc.text("ATS Analysis Report", 105, 20, null, null, 'center');
-    doc.setFontSize(12);
-    doc.setTextColor(100);
-    doc.text(`Analysis Mode: ${data.metadata.analysis_mode}`, 105, 28, null, null, 'center');
+    function exportReportAsPDF(data) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
 
-    // Overall Score
-    doc.setFontSize(16);
-    doc.setTextColor(0);
-    doc.text("Overall Match Score", 20, 45);
-    doc.setFontSize(28);
-    doc.setTextColor(data.overall_score.percentage >= 85 ? '#22c55e' : data.overall_score.percentage >= 70 ? '#f59e0b' : '#ef4444');
-    doc.text(`${data.overall_score.percentage}%`, 20, 55);
-    
-    // Recommendations
-    doc.autoTable({
-        startY: 65,
-        head: [['Priority', 'Recommendation']],
-        body: data.recommendations.map(r => [r.priority, r.suggestion]),
-        theme: 'grid',
-        headStyles: { fillColor: [41, 128, 185] }
-    });
+      doc.setFontSize(22); doc.text("ATS Analysis Report", 105, 20, null, null, 'center');
+      doc.setFontSize(12); doc.setTextColor(100);
+      doc.text(`Mode: ${data.metadata.analysis_mode}`, 105, 28, null, null, 'center');
 
-    // Sub-scores
-    let finalY = doc.lastAutoTable.finalY || 60;
-    doc.autoTable({
+      doc.setFontSize(16); doc.setTextColor(0); doc.text("Overall Match Score", 20, 45);
+      doc.setFontSize(28);
+      let scoreColor = '#ef4444';
+      const percentage = Number(data.overall_score.percentage) || 0;
+      if (percentage >= 85) scoreColor = '#22c55e';
+      else if (percentage >= 70) scoreColor = '#f59e0b';
+      else if (percentage >= 50) scoreColor = '#f97316';
+      doc.setTextColor(scoreColor); doc.text(`${percentage}%`, 20, 55); doc.setTextColor(0);
+
+      doc.autoTable({ startY: 65, head: [['Priority', 'Recommendation']], body: (data.recommendations || []).map(r => [r.priority, r.suggestion]), theme: 'grid', headStyles: { fillColor: [41,128,185] } });
+
+      let finalY = doc.lastAutoTable.finalY || 60;
+      doc.autoTable({
         startY: finalY + 10,
         head: [['Category', 'Score (%)']],
-        body: Object.entries(data.sub_scores).map(([key, value]) => [key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()), value]),
+        body: Object.entries(data.sub_scores || {}).map(([key, value]) => [key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()), value]),
         theme: 'striped'
-    });
-    
-    // Heatmap
-    finalY = doc.lastAutoTable.finalY;
-    doc.autoTable({
+      });
+
+      finalY = doc.lastAutoTable.finalY;
+      doc.autoTable({
         startY: finalY + 10,
         head: [['JD Requirement', 'Resume Evidence', 'Confidence']],
-        body: data.heatmap.slice(0, 7).map(h => [h.jd_requirement, h.evidence, `${Math.round(h.confidence * 100)}%`]),
+        body: (data.heatmap || []).slice(0, 7).map(h => [h.jd_requirement, h.evidence, `${Math.round((h.confidence || 0) * 100)}%`]),
         theme: 'grid'
-    });
+      });
 
-    doc.save(`ATS_Report_${new Date().toISOString().split('T')[0]}.pdf`);
-}
+      doc.save(`ATS_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+    }
+  </script>
 
+  <!-- Neural network animation (cyan + violet lines) -->
+  <script>
+    const canvas = document.getElementById('neural-bg');
+    const ctx = canvas.getContext('2d');
+    let nodes = [];
 
-</script>
-</body>
+    function resizeCanvas() {
+      if (!canvas) return;
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      nodes = Array.from({ length: 70 }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4
+      }));
+    }
+
+    function drawNeural() {
+      if (!ctx) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      nodes.forEach(n => {
+        n.x += n.vx; n.y += n.vy;
+        if (n.x < 0 || n.x > canvas.width) n.vx *= -1;
+        if (n.y < 0 || n.y > canvas.height) n.vy *= -1;
+
+        ctx.beginPath(); ctx.arc(n.x, n.y, 2, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(0,255,255,0.85)"; ctx.fill();
+      });
+
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 130) {
+            const alpha = 1 - dist / 130;
+            ctx.lineWidth = 0.7; ctx.strokeStyle = `rgba(0,255,255,${alpha * 0.9})`;
+            ctx.beginPath(); ctx.moveTo(nodes[i].x, nodes[i].y); ctx.lineTo(nodes[j].x, nodes[j].y); ctx.stroke();
+
+            ctx.lineWidth = 0.4; ctx.strokeStyle = `rgba(180, 0, 255, ${alpha * 0.5})`;
+            ctx.beginPath(); ctx.moveTo(nodes[i].x, nodes[i].y); ctx.lineTo(nodes[j].x, nodes[j].y); ctx.stroke();
+          }
+        }
+      }
+
+      requestAnimationFrame(drawNeural);
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+    drawNeural();
+  </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"version":"2024.11.0","token":"9c9b7d6d2f744be6916a8dd1f47e1397","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'99992ea6c8608f90',t:'MTc2MjMxMjQ3OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
-
