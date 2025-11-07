@@ -231,190 +231,77 @@
       'Web Technologies': ['react','angular','vue','node.js','django','flask','html','css']
     };
 
-    const KW_STOP = new Set([...STOP_WORDS,'role','roles','position','responsibility','responsibilities','requirement','requirements']);
-
-
-    // --- Local Keyword Analysis ---
-        heatmap.push({ jd_requirement: req, resume_section: best.section, confidence: best.confidence, evidence: best.evidence });
-
-        sums[bucket] += best.confidence;
-        counts[bucket] += 1;
-      });
-
-      const normalize = (sum, count) => count > 0 ? Math.round(Math.min(100, (sum / count) * 100)) : 0;
-
-      const coreSkillsMatch       = normalize(sums.core_skills_match,        counts.core_skills_match);
-      const responsibilitiesAlign = normalize(sums.responsibilities_alignment,counts.responsibilities_alignment);
-      const toolsTechStack        = normalize(sums.tools_tech_stack,         counts.tools_tech_stack);
-      const certsEducation        = normalize(sums.certifications_education, counts.certifications_education);
-
-      const weights = { core_skills_match: 0.25, responsibilities_alignment: 0.25, tools_tech_stack: 0.20, certifications_education: 0.05 };
-      const overallPct = Math.round(
-        coreSkillsMatch * weights.core_skills_match +
-        responsibilitiesAlign * weights.responsibilities_alignment +
-        toolsTechStack * weights.tools_tech_stack +
-        certsEducation * weights.certifications_education
-      );
-
-
-      const strengths = heatmap.filter(h => h.confidence >= 0.70).slice(0, 3)
-        .map(h => `Strong alignment: "${h.jd_requirement}" (evidence: “…${h.evidence}…")`);
-
-      const gaps = heatmap.filter(h => h.confidence < 0.40).slice(0, 3)
-        .map(h => `Potential gap: "${h.jd_requirement}"`);
-
-      const recommendations = [];
-      if (gaps.length) {
-        recommendations.push({ priority: 'high', suggestion: `Add concrete bullets mapping to ${gaps.length} low-confidence JD items. Mirror the JD phrasing where truthful and cite outcomes.` });
-      }
-      if (toolsTechStack < 75) {
-        recommendations.push({ priority: 'medium', suggestion: 'Elevate key tools to the Skills section and repeat them in relevant Experience bullets (scope + impact).' });
-      }
-      recommendations.push({ priority: 'low', suggestion: 'Ensure each major JD responsibility has at least one matching resume bullet with measurable results.' });
-
-      return {
-        overall_score: { percentage: Math.min(100, Math.max(0, overallPct)), mode, thresholds: { excellent: "85-100", strong: "70-84", moderate: "50-69", weak: "0-49" } },
-        sub_scores: {
-          core_skills_match: coreSkillsMatch,
-          responsibilities_alignment: responsibilitiesAlign,
-          tools_tech_stack: toolsTechStack,
-          certifications_education: certsEducation,
-          ats_compliance_readability: compliance.score
-        },
-        recommendations, strengths, gaps,
-        heatmap: heatmap.sort((a,b) => b.confidence - a.confidence),
-        compliance_flags: compliance.flags
-      };
-    }
-
-    // --- Local Semantic Analysis ---
-      const sums   = { core_skills_match: 0, responsibilities_alignment: 0, tools_tech_stack: 0, certifications_education: 0 };
-      const counts = { core_skills_match: 0, responsibilities_alignment: 0, tools_tech_stack: 0, certifications_education: 0 };
-      const heatmap = [];
-
-      jdRequirements.forEach(req => {
-        let best = { confidence: 0, section: 'N/A', evidence: 'Not found' };
-        for (const sectionName in resumeSections) {
-          const result = findMatchUpgraded(req, resumeSections[sectionName], 'semantic');
-          if (result.confidence > best.confidence) {
-            best = { confidence: result.confidence, section: sectionName, evidence: result.evidence };
-          }
-        }
-
-        heatmap.push({ jd_requirement: req, resume_section: best.section, confidence: best.confidence, evidence: best.evidence });
-
-        sums[bucket] += best.confidence;
-        counts[bucket] += 1;
-      });
-
-      const normalize = (sum, count) => count > 0 ? Math.round(Math.min(100, (sum / count) * 100)) : 0;
-
-      const coreSkillsMatch       = normalize(sums.core_skills_match,        counts.core_skills_match);
-      const responsibilitiesAlign = normalize(sums.responsibilities_alignment,counts.responsibilities_alignment);
-      const toolsTechStack        = normalize(sums.tools_tech_stack,         counts.tools_tech_stack);
-      const certsEducation        = normalize(sums.certifications_education, counts.certifications_education);
-
-      // Slightly different weights for semantic mode to emphasize concepts/tools
-      const weights = { core_skills_match: 0.30, responsibilities_alignment: 0.20, tools_tech_stack: 0.30, certifications_education: 0.05 };
-      const overallPct = Math.round(
-        coreSkillsMatch * weights.core_skills_match +
-        responsibilitiesAlign * weights.responsibilities_alignment +
-        toolsTechStack * weights.tools_tech_stack +
-        certsEducation * weights.certifications_education
-      );
-
-
-      const strengths = heatmap.filter(h => h.confidence >= 0.70).slice(0, 4)
-        .map(h => `Semantic alignment: "${h.jd_requirement}" (evidence: “…${h.evidence}…")`);
-
-      const gaps = heatmap.filter(h => h.confidence < 0.40).slice(0, 4)
-        .map(h => `Weak semantic coverage: "${h.jd_requirement}"`);
-
-      const recommendations = [
-        ...(gaps.length ? [{ priority: 'high', suggestion: `Add bullets that explicitly name related tools/skills for the low-confidence items (${gaps.length}).` }] : []),
-        ...(toolsTechStack < 75 ? [{ priority: 'medium', suggestion: 'Surface platform/tool names in both Skills and Experience bullets for dual parsing.' }] : []),
-        { priority: 'low', suggestion: 'Mirror JD phrasing where truthful—especially bigrams like “own roadmap”, “design scalable”, “optimize cost”.' }
-      ];
-
-      return {
-        overall_score: { percentage: Math.min(100, Math.max(0, overallPct)), mode, thresholds: { excellent: "85-100", strong: "70-84", moderate: "50-69", weak: "0-49" } },
-        sub_scores: {
-          core_skills_match: coreSkillsMatch,
-          responsibilities_alignment: responsibilitiesAlign,
-          tools_tech_stack: toolsTechStack,
-          certifications_education: certsEducation,
-          ats_compliance_readability: compliance.score
-        },
-        recommendations, strengths, gaps,
-        heatmap: heatmap.sort((a,b) => b.confidence - a.confidence),
-        compliance_flags: compliance.flags
-      };
-    }
-
     // --- Event handlers ---
+   scanBtn.addEventListener('click', async () => {
+  const resumeText = resumeInput.value;
+  const jdText = jdInput.value;
+  const mode = document.querySelector('input[name="analysis-mode"]:checked').value;
+
+  if (!resumeText.trim() || !jdText.trim()) {
+    alert('Please provide both a resume and a job description.');
+    return;
+  }
+
+  initialState.classList.add('hidden');
+  resultsContainer.classList.add('hidden');
+  loadingState.classList.remove('hidden');
+
+  try {
+    const API_URL = 'https://ats-backend-production-c5db.up.railway.app/api/score';
     
-      initialState.classList.add('hidden');
-      resultsContainer.classList.add('hidden');
-      loadingState.classList.remove('hidden');
-
-      try {
-  const API_URL = 'https://ats-backend-production-c5db.up.railway.app/api/score';
-  
-  const response = await fetch(API_URL, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({
-      jd_text: jdText,
-      resume_text: resumeText,
-      options: {
-        language: 'python',
-        use_embeddings: mode === 'semantic',
-        calibration: {a: 1.0, b: 0.0}
-      }
-    })
-  });
-
-  if (!response.ok) throw new Error(`API error: ${response.status}`);
-
-  const apiResult = await response.json();
-
-  const data = {
-    overall_score: {percentage: Math.round(apiResult.overall_score), mode},
-    sub_scores: {
-      core_skills_match: Math.round(apiResult.section_scores.required_skills.score * 100 / 28),
-      responsibilities_alignment: Math.round(apiResult.section_scores.seniority_alignment.score * 100 / 12),
-      tools_tech_stack: Math.round(apiResult.section_scores.tooling_stack.score * 100 / 10),
-      certifications_education: Math.round(apiResult.section_scores.education_cert_legal.score * 100 / 8),
-      ats_compliance_readability: Math.round(apiResult.section_scores.ats_parse_quality.score * 100 / 5)
-    },
-    recommendations: apiResult.resume_upgrade_actions.map(a => ({priority: a.impact, suggestion: a.action})),
-    strengths: apiResult.requirement_mapping.filter(r => r.matched && r.confidence >= 0.7).slice(0, 4)
-      .map(r => `Strong: "${r.item.substring(0, 50)}..." (${Math.round(r.confidence*100)}%)`),
-    gaps: apiResult.missing_must_haves.slice(0, 4).map(item => `Missing: "${item.substring(0, 50)}..."`),
-    heatmap: apiResult.requirement_mapping.map(r => ({
-      jd_requirement: r.item,
-      resume_section: r.matched ? 'Matched' : 'Not found',
-      confidence: r.confidence,
-      evidence: r.evidence[0] || 'No evidence'
-    })),
-    metadata: {analysis_mode: mode, analysis_timestamp: new Date().toISOString()},
-    compliance_flags: apiResult.debug.parse_warnings.map(w => ({issue: w, impact: 'Parse issue', recommendation: 'Fix formatting'}))
-  };
-  // ...
-
-        renderResults(data);
-        resultsContainer.classList.remove('hidden');
-        resultsContainer.scrollIntoView({ behavior: 'smooth' });
-      } catch (err) {
-        console.error("Analysis Failed:", err);
-        alert(`Analysis Error: ${err.message}`);
-        initialState.classList.remove('hidden');
-        resultsContainer.classList.add('hidden');
-      } finally {
-        loadingState.classList.add('hidden');
-      }
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        jd_text: jdText,
+        resume_text: resumeText,
+        options: {
+          language: 'python',
+          use_embeddings: mode === 'semantic',
+          calibration: {a: 1.0, b: 0.0}
+        }
+      })
     });
 
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
+
+    const apiResult = await response.json();
+
+    const data = {
+      overall_score: {percentage: Math.round(apiResult.overall_score), mode},
+      sub_scores: {
+        core_skills_match: Math.round(apiResult.section_scores.required_skills.score * 100 / 28),
+        responsibilities_alignment: Math.round(apiResult.section_scores.seniority_alignment.score * 100 / 12),
+        tools_tech_stack: Math.round(apiResult.section_scores.tooling_stack.score * 100 / 10),
+        certifications_education: Math.round(apiResult.section_scores.education_cert_legal.score * 100 / 8),
+        ats_compliance_readability: Math.round(apiResult.section_scores.ats_parse_quality.score * 100 / 5)
+      },
+      recommendations: apiResult.resume_upgrade_actions.map(a => ({priority: a.impact, suggestion: a.action})),
+      strengths: apiResult.requirement_mapping.filter(r => r.matched && r.confidence >= 0.7).slice(0, 4)
+        .map(r => `Strong: "${r.item.substring(0, 50)}..." (${Math.round(r.confidence*100)}%)`),
+      gaps: apiResult.missing_must_haves.slice(0, 4).map(item => `Missing: "${item.substring(0, 50)}..."`),
+      heatmap: apiResult.requirement_mapping.map(r => ({
+        jd_requirement: r.item,
+        resume_section: r.matched ? 'Matched' : 'Not found',
+        confidence: r.confidence,
+        evidence: r.evidence[0] || 'No evidence'
+      })),
+      metadata: {analysis_mode: mode, analysis_timestamp: new Date().toISOString()},
+      compliance_flags: apiResult.debug.parse_warnings.map(w => ({issue: w, impact: 'Parse issue', recommendation: 'Fix formatting'}))
+    };
+
+    renderResults(data);
+    resultsContainer.classList.remove('hidden');
+    resultsContainer.scrollIntoView({behavior: 'smooth'});
+  } catch (err) {
+    console.error("Analysis Failed:", err);
+    alert(`Error: ${err.message}\n\nPlease check:\n1. Backend API is running\n2. Network connection is stable`);
+    initialState.classList.remove('hidden');
+  } finally {
+    loadingState.classList.add('hidden');
+  }
+});
+ 
     clearBtn.addEventListener('click', () => {
       resumeInput.value = '';
       jdInput.value = '';
